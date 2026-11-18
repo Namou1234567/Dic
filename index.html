@@ -31,6 +31,17 @@
         .dict-title { text-align: center; font-size: 28px; font-weight: bold; color: var(--primary); margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,122,255,0.1); }
         .dict-item { background: var(--card-bg); padding: 16px 20px; border-radius: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
         
+        /* 中文朗读：保留原有词典与翻卡操作 */
+        .speech-help { font-size: 13px; line-height: 1.6; color: #59595f; }
+        .speech-help p { margin: 6px 0 0; }
+        .speak-btn { min-width: 76px; min-height: 44px; padding: 8px 12px; border: 1px solid #c7dfff; border-radius: 12px; background: #eef6ff; color: #005bbb; font-size: 14px; cursor: pointer; }
+        .speak-btn:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+        .speak-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .dict-item { gap: 12px; flex-wrap: wrap; }
+        .dict-item > div:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+        .dict-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        #cardSpeak { margin-top: 12px; }
+
         /* 背诵页顶部装饰 */
         .study-top-panel { background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,248,255,0.9)); border: 1px solid rgba(0,122,255,0.18); border-radius: 24px; padding: 18px 18px 16px; box-shadow: 0 16px 40px rgba(0,122,255,0.08); margin-bottom: 20px; }
         .study-header { text-align: center; margin-bottom: 12px; }
@@ -80,6 +91,12 @@
 <body>
 
 <div class="container">
+    <div class="panel speech-help">
+        <strong>🔊 中文词语朗读</strong>
+        <p>点击词语旁的“🔊 中文”按钮朗读中文意思；手机首次使用也需手动点击，不会自动播放。</p>
+        <p>朗读使用设备的中文语音。不同电脑或手机可能需要先安装或下载中文（普通话）语音，音色因设备而异；部分浏览器或设备可能不支持。</p>
+        <p id="speechStatus" role="status" aria-live="polite">正在检查中文语音…</p>
+    </div>
     <div id="page-dict" class="page active">
         <div class="dict-title">老挝语小词典</div>
         <input type="text" id="searchInput" class="search-box" placeholder="🔍 搜索老挝语、中文..." oninput="renderDict()">
@@ -117,6 +134,7 @@
                     <div id="cardCatTag" class="cat-badge">分类</div>
                     <div id="cardLaoBack" class="word-lao-sub">ສະບາຍດີ</div>
                     <ruby id="cardZhPy" class="word-zh">你好<rt>nǐ hǎo</rt></ruby>
+                    <button id="cardSpeak" class="speak-btn" type="button" onclick="event.stopPropagation(); speakChinese(currentList[currentIndex]?.zh)" aria-label="朗读当前词语的中文意思">🔊 中文</button>
                     <div class="hint-text">如果没记住，请点击“不认识”</div>
                 </div>
             </div>
@@ -170,6 +188,82 @@
 </nav>
 
 <script>
+// 中文朗读仅在用户点击时同步调用 speak，避免移动端失去用户手势权限。
+const speechSupported = !!window.speechSynthesis && typeof window.SpeechSynthesisUtterance === 'function';
+let chineseVoice = null;
+let availableVoices = [];
+let activeUtterance = null; // 保留引用，并忽略已取消语音的延迟回调。
+
+function setSpeechStatus(message) {
+    document.getElementById('speechStatus').textContent = message;
+}
+
+function refreshVoices() {
+    if (!speechSupported) {
+        setSpeechStatus('当前浏览器不支持中文朗读，请换用支持语音合成的浏览器。');
+        return;
+    }
+    availableVoices = window.speechSynthesis.getVoices();
+    const language = voice => voice.lang.replace(/_/g, '-').toLowerCase();
+    chineseVoice = availableVoices.find(v => language(v) === 'zh-cn')
+        || availableVoices.find(v => /^(zh-hans|cmn)(-|$)/.test(language(v)))
+        || availableVoices.find(v => /^zh(-|$)/.test(language(v))) || null;
+    if (!activeUtterance) {
+        setSpeechStatus(chineseVoice ? '中文语音已就绪，点击“🔊 中文”即可朗读。'
+            : availableVoices.length ? '未找到中文语音，请在设备的语音设置中安装或下载中文（普通话）语音后重试。'
+            : '语音列表暂未就绪；可点击尝试。若无声音，请安装中文语音或更换浏览器。');
+    }
+}
+
+function stopChineseSpeech() {
+    const wasActive = !!activeUtterance;
+    activeUtterance = null;
+    if (speechSupported) window.speechSynthesis.cancel();
+    if (wasActive) refreshVoices();
+}
+
+function speakChinese(text) {
+    if (typeof text !== 'string' || !text.trim()) return;
+    stopChineseSpeech();
+    refreshVoices(); // 每次点击重查，兼容语音列表延迟加载或设备新安装语音。
+    if (!speechSupported || (availableVoices.length && !chineseVoice)) return;
+    const utterance = new window.SpeechSynthesisUtterance(text.trim());
+    utterance.lang = 'zh-CN';
+    if (chineseVoice) utterance.voice = chineseVoice;
+    utterance.rate = 0.9;
+    activeUtterance = utterance;
+    setSpeechStatus('正在准备朗读；若无声音，请检查音量、中文语音和浏览器支持。');
+    utterance.onstart = () => {
+        if (activeUtterance === utterance) setSpeechStatus('正在朗读：' + text.trim());
+    };
+    utterance.onend = () => {
+        if (activeUtterance !== utterance) return;
+        activeUtterance = null;
+        setSpeechStatus('朗读结束，可点击再次播放。');
+    };
+    utterance.onerror = () => {
+        if (activeUtterance !== utterance) return;
+        activeUtterance = null;
+        setSpeechStatus('朗读失败，请再次点击；若仍无声音，请检查音量、安装中文语音或更换浏览器。');
+    };
+    try {
+        // 不等待 voiceschanged，也不在异步回调中自动播放，保留点击手势。
+        window.speechSynthesis.speak(utterance);
+    } catch (error) {
+        utterance.onerror();
+    }
+}
+
+function initChineseSpeech() {
+    refreshVoices();
+    if (speechSupported) window.speechSynthesis.addEventListener('voiceschanged', refreshVoices);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopChineseSpeech();
+    });
+    window.addEventListener('pagehide', stopChineseSpeech);
+    document.getElementById('cardSpeak').disabled = !speechSupported;
+}
+
 // ==========================================
 // 1. 数据配置区：完整的100个初始核心词库
 // ==========================================
@@ -678,6 +772,7 @@ let currentIndex = 0;
 // 3. 页面与路由
 // ==========================================
 function navTo(pageId, tabElement) {
+    stopChineseSpeech();
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
     
@@ -702,11 +797,19 @@ function renderDict() {
                 <div style="font-size:20px; font-weight:bold; color:var(--primary); margin-bottom:4px;">${w.lao}</div>
                 <div><ruby style="font-size:16px">${w.zh}<rt>${w.py}</rt></ruby></div>
             </div>
-            <div style="font-size:12px; color:var(--text-sub); background:#f2f2f7; padding:4px 8px; border-radius:8px;">${w.cat}</div>
+            <div class="dict-actions">
+                <div style="font-size:12px; color:var(--text-sub); background:#f2f2f7; padding:4px 8px; border-radius:8px;">${w.cat}</div>
+                <button class="speak-btn" type="button" aria-label="朗读中文意思" ${speechSupported ? '' : 'disabled'}>🔊 中文</button>
+            </div>
         </div>
     `).join('');
     
-    document.getElementById('dictContent').innerHTML = html || '<div style="text-align:center; padding:30px; color:#999;">未找到相关词汇</div>';
+    const dictContent = document.getElementById('dictContent');
+    dictContent.innerHTML = html || '<div style="text-align:center; padding:30px; color:#999;">未找到相关词汇</div>';
+    // 直接使用词条数据，不把中文拼入 onclick，兼容引号等特殊字符。
+    dictContent.querySelectorAll('.speak-btn').forEach((button, index) => {
+        button.addEventListener('click', () => speakChinese(result[index].zh));
+    });
 }
 
 // ==========================================
@@ -737,6 +840,8 @@ function refreshStudy() {
 }
 
 function updateCardUI() {
+    stopChineseSpeech();
+    document.getElementById('cardSpeak').disabled = !speechSupported || currentList.length === 0;
     const card = document.getElementById('mainCard');
     card.classList.remove('flipped'); // 切换单词时重置翻转状态
     
@@ -893,6 +998,7 @@ function resetData() {
 // 初始化启动
 // ==========================================
 window.onload = () => {
+    initChineseSpeech();
     renderDict();
     updateAdminStats();
 };
