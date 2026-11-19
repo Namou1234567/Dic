@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>小词典 · 南欧江水电站学习好帮手</title>
-    <script src="https://unpkg.com/pinyin-pro"></script>
+    <script src="vendor/pinyin-pro-3.29.5.js"></script>
     <script src="audio/manifest.js" defer></script>
     <style>
         @font-face {
@@ -197,6 +197,8 @@
         #page-study .multiple-meanings .card-back { padding-top: 28px; padding-bottom: 12px; }
         #page-study .multiple-meanings .card-back .word-lao-sub,
         #page-study .multiple-meanings .card-back .hint-text { display: none; }
+        .dict-meanings ruby { font-size: 16px; }
+        .matched-meaning { background: #ffedab; color: #25343b; border-radius: 3px; }
     </style>
 </head>
 <body>
@@ -1041,41 +1043,49 @@ function navTo(pageId, tabElement) {
 // ==========================================
 // 拼音允许不带声调或空格。老挝语保留声调和元音符号。
 function searchDictionary(query) {
-    const normalize = value => String(value ?? '').normalize('NFKC').toLowerCase().trim();
-    const compact = value => normalize(value).replace(/\s+/g, '');
+    const compact = value => value.normalize('NFKC').toLowerCase().replace(/\s+/g, '');
     const pinyin = value => compact(value).normalize('NFD')
         .replace(/u\u0308/g, 'v').replace(/[\u0300-\u036f'’-]/g, '');
     const keyword = compact(query);
     const phonetic = pinyin(query);
+    const rankText = fields => {
+        if (fields.includes(keyword)) return 0;
+        if (fields.some(field => field.startsWith(keyword))) return 2;
+        if (fields.some(field => field.includes(keyword))) return 3;
+        return Infinity;
+    };
 
     return db.map(word => {
-        const written = [compact(word.zh), compact(word.lao)];
-        const aliases = written.flatMap(value => value.split(/[/、，；;（）()]/).filter(Boolean));
-        const fields = written.concat(aliases);
-        if (fields.includes(keyword)) return { word, rank: 0 };
-        const pronunciations = word.py.split("；").map(pinyin);
-        if (phonetic && pronunciations.includes(phonetic)) return { word, rank: 1 };
-        if (fields.some(value => value.startsWith(keyword))) return { word, rank: 2 };
-        if (fields.some(value => value.includes(keyword))) return { word, rank: 3 };
-        if (phonetic && pronunciations.some(value => value.includes(phonetic))) return { word, rank: 4 };
-        return { word, rank: -1 };
-    }).filter(match => match.rank >= 0)
-        .sort((a, b) => a.rank - b.rank)
-        .map(match => match.word);
+        const pronunciations = word.py.split('；').map(pinyin);
+        const matches = word.meanings.map((meaning, index) => {
+            const full = compact(meaning);
+            const fields = [full, ...full.split(/[/、,;()]/).filter(Boolean)];
+            const sound = pronunciations[index];
+            const soundRank = !phonetic ? Infinity : sound === phonetic ? 1
+                : sound?.includes(phonetic) ? 4 : Infinity;
+            return Math.min(rankText(fields), soundRank);
+        });
+        const bestMeaning = Math.min(...matches);
+        const rank = Math.min(rankText([compact(word.lao), ...compact(word.lao).split('/')]), bestMeaning);
+        const matchedIndices = Number.isFinite(bestMeaning)
+            ? matches.flatMap((score, index) => score === bestMeaning ? [index] : [])
+            : [];
+        return { word, rank, matchedIndices };
+    }).filter(match => Number.isFinite(match.rank)).sort((a, b) => a.rank - b.rank);
 }
 
 function renderDict() {
     const query = document.getElementById('searchInput').value.trim();
-    const result = query ? searchDictionary(query) : db.slice(0, 20);
+    const result = query ? searchDictionary(query) : db.slice(0, 20).map(word => ({ word, matchedIndices: [] }));
 
-    const html = result.map(w => `
+    const html = result.map(() => `
         <div class="dict-item">
             <div>
-                <div class="dict-lao">${w.lao}</div>
-                <div><ruby style="font-size:16px">${w.zh}<rt>${w.py}</rt></ruby></div>
+                <div class="dict-lao"></div>
+                <div class="dict-meanings"></div>
             </div>
             <div class="dict-actions">
-                <div class="dict-category">${w.cat}</div>
+                <div class="dict-category"></div>
                 <button class="speak-btn" type="button" aria-label="朗读中文意思" >🔊 中文</button>
             </div>
         </div>
@@ -1088,7 +1098,25 @@ function renderDict() {
         const picker = document.createElement('select');
         picker.className = 'meaning-picker';
         picker.setAttribute('aria-label', '选择要朗读的中文译义');
-        fillMeanings(picker, result[index]);
+        const { word, matchedIndices } = result[index];
+        const row = button.closest('.dict-item');
+        row.querySelector('.dict-lao').textContent = word.lao;
+        row.querySelector('.dict-category').textContent = word.cat;
+        const meanings = row.querySelector('.dict-meanings');
+        const pronunciations = word.py.split('；');
+        word.meanings.forEach((text, meaningIndex) => {
+            if (meaningIndex) meanings.append('；');
+            const ruby = document.createElement('ruby');
+            const label = document.createElement(matchedIndices.includes(meaningIndex) ? 'mark' : 'span');
+            if (label.tagName === 'MARK') label.className = 'matched-meaning';
+            label.textContent = text;
+            const rt = document.createElement('rt');
+            rt.textContent = pronunciations[meaningIndex] || '';
+            ruby.append(label, rt);
+            meanings.appendChild(ruby);
+        });
+        fillMeanings(picker, word);
+        picker.selectedIndex = matchedIndices[0] ?? 0;
         if (!picker.hidden) button.before(picker);
         button.addEventListener('click', () => speakChinese(picker.value));
     });
@@ -1115,10 +1143,18 @@ function refreshStudy() {
     }
 
     // 读取该分类的历史记忆进度
-    currentIndex = memory[currentCat] || 0;
-    if (currentIndex >= currentList.length) currentIndex = 0;
+    currentIndex = findStudyPosition(currentList, memory[currentCat]);
     
     updateCardUI();
+}
+
+function findStudyPosition(list, saved) {
+    const key = saved?.lao;
+    const found = key ? list.findIndex(word => laoKey(word.lao) === key) : -1;
+    if (found >= 0) return found;
+    const previousIndex = typeof saved === 'number' ? saved : saved?.index;
+    return Number.isInteger(previousIndex) && previousIndex >= 0 && previousIndex < list.length
+        ? previousIndex : 0;
 }
 
 function fillMeanings(picker, word) {
@@ -1172,7 +1208,7 @@ function updateCardUI() {
     document.getElementById('progressBar').style.width = `${(currentNum / totalNum) * 100}%`;
 
     // 自动保存记忆
-    memory[currentCat] = currentIndex;
+    memory[currentCat] = { lao: laoKey(word.lao), index: currentIndex };
     localStorage.setItem('lao_memory_v11', JSON.stringify(memory));
 }
 
