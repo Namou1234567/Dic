@@ -926,7 +926,7 @@ const initialDB = [
     // --- 逻辑、连接与副词 (文化/工作) ---
     {lao:"ແນ່ນອນ", zh:"当然/肯定", cat:"文化"}, {lao:"ອາດຈະ", zh:"也许/可能", cat:"文化"}, {lao:"ບາງທີ", zh:"或许", cat:"文化"}, {lao:"ທັນທີ", zh:"立刻", cat:"工作"},
     {lao:"ຄ່ອຍໆ", zh:"慢慢地", cat:"生活"}, {lao:"ປົກກະຕິ", zh:"正常/通常", cat:"生活"}, {lao:"ພິເສດ", zh:"特殊", cat:"生活"}, {lao:"ສ່ວນຫຼາຍ", zh:"大部分", cat:"文化"},
-    {lao:"ສ່ວນໜ້ອຍ", zh:"少部分", cat:"文化"}, {lao:"ເກືອບ", zh:"几乎", cat:"生活"}, {lao:"ເປັນປະຈຳ", cat:"经常", zh:"经常"}, {lao:"ບາງຄັ້ງ", zh:"有时", cat:"生活"},
+    {lao:"ສ່ວນໜ້ອຍ", zh:"少部分", cat:"文化"}, {lao:"ເກືອບ", zh:"几乎", cat:"生活"}, {lao:"ເປັນປະຈຳ", cat:"生活", zh:"经常"}, {lao:"ບາງຄັ້ງ", zh:"有时", cat:"生活"},
      // --- 1. 大坝与水工建筑 (工作) ---
     {lao:"ເຂື່ອນ", zh:"大坝", cat:"工作"}, {lao:"ອ່າງເກັບນ້ຳ", zh:"水库", cat:"工作"}, {lao:"ປະຕູນ້ຳ", zh:"闸门", cat:"工作"}, {lao:"ທາງລະບາຍນ້ຳລົ້ນ", zh:"溢洪道", cat:"工作"},
     {lao:"ອຸໂມງຜັນນ້ຳ", zh:"导流洞", cat:"工作"}, {lao:"ອຸໂມງສົ່ງນ້ຳ", zh:"引水隧道", cat:"工作"}, {lao:"ເຮືອນຈັກ", zh:"厂房", cat:"工作"}, {lao:"ພື້ນຖານເຂື່ອນ", zh:"坝基", cat:"工作"},
@@ -961,8 +961,15 @@ const initialDB = [
 // 2. 状态管理
 // ==========================================
 // 为了防止与旧版本冲突，这里采用 _v11 后缀
-let db = JSON.parse(localStorage.getItem('lao_db_v11')) || initialDB;
-let wrongs = JSON.parse(localStorage.getItem('lao_wrong_v11')) || [];
+// 修正旧版已保存的公共词条，同时保留个人词库和学习记录。
+function repairLegacyCategory(word) {
+    return word.lao === 'ເປັນປະຈຳ' && word.zh === '经常' && word.cat === '经常'
+        ? { ...word, cat: '生活' }
+        : word;
+}
+
+let db = (JSON.parse(localStorage.getItem('lao_db_v11')) || initialDB).map(repairLegacyCategory);
+let wrongs = (JSON.parse(localStorage.getItem('lao_wrong_v11')) || []).map(repairLegacyCategory);
 let memory = JSON.parse(localStorage.getItem('lao_memory_v11')) || { "全部":0, "生活":0, "工作":0, "文化":0, "错题":0 };
 
 let currentCat = '全部';
@@ -1109,20 +1116,24 @@ function updateCardUI() {
     localStorage.setItem('lao_memory_v11', JSON.stringify(memory));
 }
 
+function sameVocabularyEntry(a, b) {
+    return a.lao === b.lao && a.zh === b.zh && a.cat === b.cat;
+}
+
 function handleResult(isRemembered) {
     if (currentList.length === 0) return;
     const word = currentList[currentIndex];
     
     if (!isRemembered) {
         // 记入错题本 (去重)
-        if (!wrongs.some(w => w.lao === word.lao)) {
+        if (!wrongs.some(w => sameVocabularyEntry(w, word))) {
             wrongs.push(word);
             saveData();
         }
     } else {
         // 如果在错题本里点击了“记住了”，则从错题本移除
         if (currentCat === '错题') {
-            wrongs = wrongs.filter(w => w.lao !== word.lao);
+            wrongs = wrongs.filter(w => !sameVocabularyEntry(w, word));
             saveData();
             if (currentIndex >= wrongs.length) currentIndex = 0;
             return refreshStudy(); // 刷新列表
