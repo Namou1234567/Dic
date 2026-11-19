@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>小词典 · 水电站学习好帮手</title>
+    <title>小词典 · 南欧江水电站学习好帮手</title>
     <script src="https://unpkg.com/pinyin-pro"></script>
     <script src="audio/manifest.js" defer></script>
     <style>
@@ -147,6 +147,33 @@
             .page { animation: none; }
             .flashcard, #progressBar { transition: none; }
         }
+        #page-study .study-top-panel { padding: 10px 14px; margin-bottom: 10px; }
+        #page-study .study-header { margin-bottom: 6px; }
+        #page-study .study-label { padding: 3px 10px; }
+        #page-study .study-header small { margin-top: 4px; font-size: 12px; }
+        #page-study .progress-track { margin-bottom: 0; height: 6px; }
+        .study-progress-label { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 12px; color: var(--text-sub); }
+        #page-study .cat-scroll { gap: 5px; padding-bottom: 5px; }
+        #page-study .cat-btn { padding: 5px 9px; }
+        #page-study .flashcard-wrapper {
+            height: 260px; height: clamp(176px, calc(100vh - 340px), 290px);
+            height: clamp(176px, calc(100svh - 340px - env(safe-area-inset-bottom)), 290px);
+            margin-bottom: 8px;
+        }
+        #page-study .card-face { padding: 32px 14px 26px; }
+        #page-study .word-lao-sub { margin-bottom: 6px; font-size: 1.125rem; }
+        #page-study .word-zh { font-size: 1.4rem; }
+        #page-study .cat-badge { top: 7px; left: 9px; padding: 3px 8px; }
+        #page-study .hint-text { bottom: 6px; font-size: 12px; }
+        #cardSpeak { margin-top: 5px; }
+        #page-study .action-bar { margin-top: 6px; gap: 8px; }
+        #page-study .btn { min-height: 44px; padding: 8px; }
+        .study-previous { text-align: center; margin-top: 4px; }
+        .study-previous button { min-height: 44px; }
+        @media (max-height: 640px) {
+            .container { padding-top: 10px; }
+            #page-study .study-header small { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -157,7 +184,7 @@
     <div id="page-dict" class="page active">
         <header class="dict-header">
             <h1>小词典</h1>
-            <p>水电站学习好帮手</p>
+            <p>南欧江水电站学习好帮手</p>
         </header>
         <input type="text" id="searchInput" aria-label="搜索老挝语或中文" class="search-box" placeholder="🔍 搜索老挝语、中文..." oninput="renderDict()">
         <div id="dictContent"></div>
@@ -170,7 +197,7 @@
                 <small>轻触卡片翻转，配合分类更好记。</small>
             </div>
             <div class="progress-track"><div id="progressBar"></div></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:13px; color:var(--text-sub);">
+            <div class="study-progress-label">
                 <span>当前进度</span>
                 <strong id="progressText" style="color:var(--primary);">0/0</strong>
             </div>
@@ -205,7 +232,7 @@
             <button class="btn btn-know" onclick="handleResult(true)">✅ 记住了</button>
         </div>
         
-        <div style="text-align:center; margin-top:20px;">
+        <div class="study-previous">
             <button onclick="navStep(-1)" style="background:none; border:none; color:var(--text-sub); font-size:14px; padding:10px;">← 偷看上一个</button>
         </div>
     </div>
@@ -949,10 +976,34 @@ function navTo(pageId, tabElement) {
 // ==========================================
 // 4. 词典功能
 // ==========================================
+// 拼音允许不带声调或空格。老挝语保留声调和元音符号。
+function searchDictionary(query) {
+    const normalize = value => String(value ?? '').normalize('NFKC').toLowerCase().trim();
+    const compact = value => normalize(value).replace(/\s+/g, '');
+    const pinyin = value => compact(value).normalize('NFD')
+        .replace(/u\u0308/g, 'v').replace(/[\u0300-\u036f'’-]/g, '');
+    const keyword = compact(query);
+    const phonetic = pinyin(query);
+
+    return db.map(word => {
+        const written = [compact(word.zh), compact(word.lao)];
+        const aliases = written.flatMap(value => value.split(/[/、，；;（）()]/).filter(Boolean));
+        const fields = written.concat(aliases);
+        if (fields.includes(keyword)) return { word, rank: 0 };
+        if (phonetic && pinyin(word.py) === phonetic) return { word, rank: 1 };
+        if (fields.some(value => value.startsWith(keyword))) return { word, rank: 2 };
+        if (fields.some(value => value.includes(keyword))) return { word, rank: 3 };
+        if (phonetic && pinyin(word.py).includes(phonetic)) return { word, rank: 4 };
+        return { word, rank: -1 };
+    }).filter(match => match.rank >= 0)
+        .sort((a, b) => a.rank - b.rank)
+        .map(match => match.word);
+}
+
 function renderDict() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const result = db.filter(w => w.lao.toLowerCase().includes(query) || w.zh.includes(query) || w.py.includes(query));
-    
+    const query = document.getElementById('searchInput').value.trim();
+    const result = query ? searchDictionary(query) : db.slice(0, 20);
+
     const html = result.map(w => `
         <div class="dict-item">
             <div>
