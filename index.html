@@ -191,6 +191,12 @@
             .container { padding-top: 10px; }
             #page-study .study-header small { display: none; }
         }
+        select.meaning-picker { width: auto; max-width: 100%; min-height: 36px; margin: 0; padding: 4px 6px; color: var(--text-main); font-size: 14px; }
+        .dict-actions .meaning-picker { flex-basis: 100%; min-width: 0; }
+        .dict-actions { max-width: 50%; }
+        #page-study .multiple-meanings .card-back { padding-top: 28px; padding-bottom: 12px; }
+        #page-study .multiple-meanings .card-back .word-lao-sub,
+        #page-study .multiple-meanings .card-back .hint-text { display: none; }
     </style>
 </head>
 <body>
@@ -238,7 +244,8 @@
                     <div id="cardCatTag" class="cat-badge">分类</div>
                     <div id="cardLaoBack" class="word-lao-sub">ສະບາຍດີ</div>
                     <ruby id="cardZhPy" class="word-zh">你好<rt>nǐ hǎo</rt></ruby>
-                    <button id="cardSpeak" class="speak-btn" type="button" onclick="event.stopPropagation(); speakChinese(currentList[currentIndex]?.zh)" aria-label="朗读当前词语的中文意思">🔊 中文</button>
+                    <select id="cardMeaning" class="meaning-picker" aria-label="选择要朗读的中文译义" onclick="event.stopPropagation()" hidden></select>
+                    <button id="cardSpeak" class="speak-btn" type="button" onclick="event.stopPropagation(); speakChinese(document.getElementById('cardMeaning').value)" aria-label="朗读当前词语的中文意思">🔊 中文</button>
                     <div class="hint-text">如果没记住，请点击“不认识”</div>
                 </div>
             </div>
@@ -968,8 +975,40 @@ function repairLegacyCategory(word) {
         : word;
 }
 
-let db = (JSON.parse(localStorage.getItem('lao_db_v11')) || initialDB).map(repairLegacyCategory);
-let wrongs = (JSON.parse(localStorage.getItem('lao_wrong_v11')) || []).map(repairLegacyCategory);
+function laoKey(text) {
+    return text.trim().normalize('NFC');
+}
+
+function mergeVocabulary(words) {
+    const entries = new Map();
+    for (const original of words) {
+        const word = repairLegacyCategory(original);
+        const lao = laoKey(word.lao);
+        if (!lao) continue;
+        const entry = entries.get(lao) || { lao, meanings: [], categories: [] };
+        for (const meaning of word.meanings || [word.zh]) {
+            const text = meaning.trim();
+            if (text && !entry.meanings.includes(text)) entry.meanings.push(text);
+        }
+        for (const category of word.categories || [word.cat]) {
+            if (!entry.categories.includes(category)) entry.categories.push(category);
+        }
+        entries.set(lao, entry);
+    }
+    return Array.from(entries.values(), entry => ({
+        ...entry,
+        zh: entry.meanings.join('；'),
+        py: entry.meanings.map(text => pinyinPro.pinyin(text)).join('；'),
+        cat: entry.categories.join(' / ')
+    }));
+}
+
+let db = mergeVocabulary(JSON.parse(localStorage.getItem('lao_db_v11')) || initialDB);
+function mergeWrongEntries(words) {
+    const entries = new Map(db.map(word => [word.lao, word]));
+    return mergeVocabulary(words).map(word => entries.get(word.lao) || word);
+}
+let wrongs = mergeWrongEntries(JSON.parse(localStorage.getItem('lao_wrong_v11')) || []);
 let memory = JSON.parse(localStorage.getItem('lao_memory_v11')) || { "全部":0, "生活":0, "工作":0, "文化":0, "错题":0 };
 
 let currentCat = '全部';
@@ -1014,10 +1053,11 @@ function searchDictionary(query) {
         const aliases = written.flatMap(value => value.split(/[/、，；;（）()]/).filter(Boolean));
         const fields = written.concat(aliases);
         if (fields.includes(keyword)) return { word, rank: 0 };
-        if (phonetic && pinyin(word.py) === phonetic) return { word, rank: 1 };
+        const pronunciations = word.py.split("；").map(pinyin);
+        if (phonetic && pronunciations.includes(phonetic)) return { word, rank: 1 };
         if (fields.some(value => value.startsWith(keyword))) return { word, rank: 2 };
         if (fields.some(value => value.includes(keyword))) return { word, rank: 3 };
-        if (phonetic && pinyin(word.py).includes(phonetic)) return { word, rank: 4 };
+        if (phonetic && pronunciations.some(value => value.includes(phonetic))) return { word, rank: 4 };
         return { word, rank: -1 };
     }).filter(match => match.rank >= 0)
         .sort((a, b) => a.rank - b.rank)
@@ -1045,7 +1085,12 @@ function renderDict() {
     dictContent.innerHTML = html || '<div style="text-align:center; padding:30px; color:#999;">未找到相关词汇</div>';
     // 直接使用词条数据，不把中文拼入 onclick，兼容引号等特殊字符。
     dictContent.querySelectorAll('.speak-btn').forEach((button, index) => {
-        button.addEventListener('click', () => speakChinese(result[index].zh));
+        const picker = document.createElement('select');
+        picker.className = 'meaning-picker';
+        picker.setAttribute('aria-label', '选择要朗读的中文译义');
+        fillMeanings(picker, result[index]);
+        if (!picker.hidden) button.before(picker);
+        button.addEventListener('click', () => speakChinese(picker.value));
     });
 }
 
@@ -1066,7 +1111,7 @@ function refreshStudy() {
     } else if (currentCat === '全部') {
         currentList = [...db];
     } else {
-        currentList = db.filter(item => item.cat === currentCat);
+        currentList = db.filter(item => item.categories.includes(currentCat));
     }
 
     // 读取该分类的历史记忆进度
@@ -1076,7 +1121,22 @@ function refreshStudy() {
     updateCardUI();
 }
 
+function fillMeanings(picker, word) {
+    picker.textContent = '';
+    const meanings = word?.meanings || [];
+    for (const text of meanings) {
+        const option = document.createElement('option');
+        option.value = text;
+        option.textContent = text;
+        picker.appendChild(option);
+    }
+    picker.hidden = meanings.length < 2;
+}
+
 function updateCardUI() {
+    const wordForSpeech = currentList[currentIndex];
+    fillMeanings(document.getElementById('cardMeaning'), wordForSpeech);
+    document.getElementById('mainCard').classList.toggle('multiple-meanings', (wordForSpeech?.meanings.length || 0) > 1);
     stopChineseSpeech();
     document.getElementById('cardSpeak').disabled = currentList.length === 0;
     const card = document.getElementById('mainCard');
@@ -1117,7 +1177,7 @@ function updateCardUI() {
 }
 
 function sameVocabularyEntry(a, b) {
-    return a.lao === b.lao && a.zh === b.zh && a.cat === b.cat;
+    return laoKey(a.lao) === laoKey(b.lao);
 }
 
 function handleResult(isRemembered) {
@@ -1167,7 +1227,8 @@ function addNewWord() {
     }
 
     const py = pinyinPro.pinyin(zh);
-    db.unshift({ lao, zh, py, cat }); // 加到词库最前面
+    db = mergeVocabulary([{ lao, zh, py, cat }, ...db]);
+    wrongs = mergeWrongEntries(wrongs);
     saveData();
     
     alert("✅ 成功加入词库！");
@@ -1209,8 +1270,8 @@ function importData(event) {
             const imported = JSON.parse(e.target.result);
             if (imported.db && Array.isArray(imported.db)) {
                 if (confirm("备份读取成功！是否覆盖当前所有数据？")) {
-                    db = imported.db;
-                    wrongs = imported.wrongs || [];
+                    db = mergeVocabulary(imported.db);
+                    wrongs = mergeWrongEntries(imported.wrongs || []);
                     saveData();
                     alert("恢复成功！页面将重新加载。");
                     location.reload();
