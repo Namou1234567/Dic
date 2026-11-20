@@ -203,6 +203,16 @@
         .lao-speak-btn { background: #eef4fa; color: #244c71; border-color: #c7d9e8; }
         .dict-actions .speak-btn { white-space: nowrap; min-width: 0; }
         #cardLaoSpeak { position: relative; z-index: 1; }
+        .speak-btn:active, .speak-btn.is-pressed {
+            background: #176858;
+            border-color: #176858;
+            color: #fff;
+        }
+        .lao-speak-btn:active, .lao-speak-btn.is-pressed {
+            background: #244c71;
+            border-color: #244c71;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -483,6 +493,16 @@ function stopChineseSpeech() {
     if (speechSupported) window.speechSynthesis.cancel();
     if (wasActive) refreshVoices();
 }
+
+// 点击后短暂保留按下颜色，避免手机轻点时反馈一闪而过。
+const speechButtonTimers = new WeakMap();
+document.addEventListener('click', event => {
+    const button = event.target.closest('.speak-btn');
+    if (!button || button.disabled) return;
+    clearTimeout(speechButtonTimers.get(button));
+    button.classList.add('is-pressed');
+    speechButtonTimers.set(button, setTimeout(() => button.classList.remove('is-pressed'), 350));
+}, true);
 
 function speakLao(text) {
     if (!text) return;
