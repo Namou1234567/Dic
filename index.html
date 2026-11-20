@@ -6,6 +6,7 @@
     <title>小词典 · 南欧江水电站学习好帮手</title>
     <script src="vendor/pinyin-pro-3.29.5.js"></script>
     <script src="audio/manifest.js" defer></script>
+    <script src="audio/lao/manifest.js" defer></script>
     <style>
         @font-face {
             font-family: "Phetsarath OT";
@@ -199,6 +200,9 @@
         #page-study .multiple-meanings .card-back .hint-text { display: none; }
         .dict-meanings ruby { font-size: 16px; }
         .matched-meaning { background: #ffedab; color: #25343b; border-radius: 3px; }
+        .lao-speak-btn { background: #eef4fa; color: #244c71; border-color: #c7d9e8; }
+        .dict-actions .speak-btn { white-space: nowrap; min-width: 0; }
+        #cardLaoSpeak { position: relative; z-index: 1; }
     </style>
 </head>
 <body>
@@ -240,6 +244,7 @@
             <div id="mainCard" class="flashcard" onclick="this.classList.toggle('flipped')">
                 <div class="card-face">
                     <div id="cardLaoFront" class="word-lao-main">ສະບາຍດີ</div>
+                    <button id="cardLaoSpeak" class="speak-btn lao-speak-btn" type="button" onclick="event.stopPropagation(); speakLao(currentList[currentIndex]?.lao)" aria-label="朗读当前老挝语词条">🔊 老挝语</button>
                     <div class="hint-text">点击卡片翻看答案</div>
                 </div>
                 <div class="card-back card-face">
@@ -319,7 +324,7 @@ function showSpeechNotice(message) {
     speechNoticeTimer = setTimeout(() => { notice.hidden = true; }, 6000);
 }
 
-function playRecordedChinese(text, clip) {
+function playRecordedSpeech(text, clip) {
     const audio = new window.Audio(clip.src + '#t=' + clip.start + ',' + clip.end);
     activeRecordedAudio = audio;
     audio.id = 'recordedSpeechAudio';
@@ -417,12 +422,23 @@ function stopChineseSpeech() {
     if (wasActive) refreshVoices();
 }
 
+function speakLao(text) {
+    if (!text) return;
+    stopChineseSpeech();
+    const clip = window.NAMOU_LAO_CLIPS?.[laoKey(text)];
+    if (clip) {
+        playRecordedSpeech(text, clip);
+    } else {
+        showSpeechNotice('这个老挝语词条暂未配音。');
+    }
+}
+
 function speakChinese(text) {
     if (typeof text !== 'string' || !text.trim()) return;
     stopChineseSpeech();
     const clip = window.NAMOU_VOICE_CLIPS && window.NAMOU_VOICE_CLIPS[text.trim()];
     if (clip) {
-        playRecordedChinese(text.trim(), clip);
+        playRecordedSpeech(text.trim(), clip);
         return;
     }
     // 个人新增词条使用原系统朗读；不冒充已经配好的公共词库音频。
@@ -1086,7 +1102,8 @@ function renderDict() {
             </div>
             <div class="dict-actions">
                 <div class="dict-category"></div>
-                <button class="speak-btn" type="button" aria-label="朗读中文意思" >🔊 中文</button>
+                <button class="speak-btn lao-speak-btn" type="button" aria-label="朗读老挝语">🔊 老挝语</button>
+                <button class="speak-btn zh-speak-btn" type="button" aria-label="朗读中文意思">🔊 中文</button>
             </div>
         </div>
     `).join('');
@@ -1094,13 +1111,14 @@ function renderDict() {
     const dictContent = document.getElementById('dictContent');
     dictContent.innerHTML = html || '<div style="text-align:center; padding:30px; color:#999;">未找到相关词汇</div>';
     // 直接使用词条数据，不把中文拼入 onclick，兼容引号等特殊字符。
-    dictContent.querySelectorAll('.speak-btn').forEach((button, index) => {
+    dictContent.querySelectorAll('.zh-speak-btn').forEach((button, index) => {
         const picker = document.createElement('select');
         picker.className = 'meaning-picker';
         picker.setAttribute('aria-label', '选择要朗读的中文译义');
         const { word, matchedIndices } = result[index];
         const row = button.closest('.dict-item');
         row.querySelector('.dict-lao').textContent = word.lao;
+        row.querySelector('.lao-speak-btn').addEventListener('click', () => speakLao(word.lao));
         row.querySelector('.dict-category').textContent = word.cat;
         const meanings = row.querySelector('.dict-meanings');
         const pronunciations = word.py.split('；');
@@ -1175,6 +1193,7 @@ function updateCardUI() {
     document.getElementById('mainCard').classList.toggle('multiple-meanings', (wordForSpeech?.meanings.length || 0) > 1);
     stopChineseSpeech();
     document.getElementById('cardSpeak').disabled = currentList.length === 0;
+    document.getElementById('cardLaoSpeak').disabled = currentList.length === 0;
     const card = document.getElementById('mainCard');
     card.classList.remove('flipped'); // 切换单词时重置翻转状态
     
