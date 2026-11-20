@@ -324,7 +324,68 @@ function showSpeechNotice(message) {
     speechNoticeTimer = setTimeout(() => { notice.hidden = true; }, 6000);
 }
 
+let androidAudioContext;
+let androidClip;
+let androidBank;
+
+function stopAndroidClip() {
+    if (!androidClip) return;
+    const playback = androidClip;
+    androidClip = null;
+    clearTimeout(playback.timer);
+    playback.controller.abort();
+    if (playback.source) {
+        playback.source.onended = null;
+        playback.source.stop();
+    }
+}
+
+async function playAndroidClip(text, clip, AudioContext) {
+    const playback = { controller: new AbortController() };
+    androidClip = playback;
+    playback.timer = setTimeout(() => {
+        if (androidClip !== playback) return;
+        stopAndroidClip();
+        showSpeechNotice('音频加载超时，请检查网络后重试。');
+    }, 15000);
+    try {
+        androidAudioContext = androidAudioContext || new AudioContext();
+        const context = androidAudioContext;
+        const resumed = context.resume();
+        await resumed;
+        if (androidClip !== playback) return;
+        if (androidBank?.url !== clip.src) {
+            const response = await fetch(clip.src, { signal: playback.controller.signal });
+            if (!response.ok) throw new Error('Audio download failed');
+            const buffer = await context.decodeAudioData(await response.arrayBuffer());
+            if (androidClip !== playback) return;
+            androidBank = { url: clip.src, buffer };
+        }
+        const source = context.createBufferSource();
+        source.buffer = androidBank.buffer;
+        source.connect(context.destination);
+        source.onended = () => {
+            if (androidClip !== playback) return;
+            androidClip = null;
+            setSpeechStatus('朗读结束，可点击再次播放。');
+        };
+        source.start(0, clip.start, clip.end - clip.start);
+        playback.source = source;
+        clearTimeout(playback.timer);
+        setSpeechStatus('正在朗读：' + text);
+    } catch (error) {
+        if (androidClip !== playback) return;
+        stopAndroidClip();
+        showSpeechNotice('音频播放失败，请检查网络后点击重试。');
+    }
+}
+
 function playRecordedSpeech(text, clip) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (/Android/i.test(window.navigator?.userAgent || '') && AudioContext) {
+        playAndroidClip(text, clip, AudioContext);
+        return;
+    }
     const audio = new window.Audio(clip.src + '#t=' + clip.start + ',' + clip.end);
     activeRecordedAudio = audio;
     audio.id = 'recordedSpeechAudio';
@@ -404,6 +465,7 @@ function refreshVoices() {
 }
 
 function stopChineseSpeech() {
+    stopAndroidClip();
     clearInterval(recordedBoundaryTimer);
     if (activeRecordedAudio) {
         activeRecordedAudio.onloadedmetadata = null;
