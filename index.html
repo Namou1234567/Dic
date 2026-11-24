@@ -80,6 +80,7 @@
         .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4,0.2,0.2,1); transform-style: preserve-3d; cursor: pointer; }
         .flashcard.flipped { transform: rotateY(180deg); }
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%); box-shadow: 0 18px 38px rgba(0,0,0,0.08); padding: 24px; box-sizing: border-box; }
+        .flashcard:not(.flipped) .card-back, .flashcard.flipped .card-front { pointer-events: none; }
         .card-back { transform: rotateY(180deg); background: linear-gradient(180deg, #fbfdff 0%, #e8f1ff 100%); border: 1px solid rgba(0,122,255,0.14); }
 
         /* 卡片字体设计 */
@@ -250,13 +251,13 @@
         </div>
 
         <div class="flashcard-wrapper">
-            <div id="mainCard" class="flashcard" onclick="this.classList.toggle('flipped')">
-                <div class="card-face">
+            <div id="mainCard" class="flashcard" onclick="stopChineseSpeech(); setCardFlipped(this, !this.classList.contains('flipped'))">
+                <div class="card-front card-face">
                     <div id="cardLaoFront" class="word-lao-main">ສະບາຍດີ</div>
                     <button id="cardLaoSpeak" class="speak-btn lao-speak-btn" type="button" onclick="event.stopPropagation(); speakLao(currentList[currentIndex]?.lao)" aria-label="朗读当前老挝语词条">🔊 老挝语</button>
                     <div class="hint-text">点击卡片翻看答案</div>
                 </div>
-                <div class="card-back card-face">
+                <div class="card-back card-face" inert>
                     <div id="cardCatTag" class="cat-badge">分类</div>
                     <div id="cardLaoBack" class="word-lao-sub">ສະບາຍດີ</div>
                     <ruby id="cardZhPy" class="word-zh">你好<rt>nǐ hǎo</rt></ruby>
@@ -1264,6 +1265,12 @@ function fillMeanings(picker, word) {
     picker.hidden = meanings.length < 2;
 }
 
+function setCardFlipped(card, flipped) {
+    card.querySelector('.card-front').inert = flipped;
+    card.querySelector('.card-back').inert = !flipped;
+    card.classList.toggle('flipped', flipped);
+}
+
 function updateCardUI() {
     const wordForSpeech = currentList[currentIndex];
     fillMeanings(document.getElementById('cardMeaning'), wordForSpeech);
@@ -1272,7 +1279,7 @@ function updateCardUI() {
     document.getElementById('cardSpeak').disabled = currentList.length === 0;
     document.getElementById('cardLaoSpeak').disabled = currentList.length === 0;
     const card = document.getElementById('mainCard');
-    card.classList.remove('flipped'); // 切换单词时重置翻转状态
+    setCardFlipped(card, false); // 切换单词时重置翻转状态
     
     // 空列表处理
     if (currentList.length === 0) {
