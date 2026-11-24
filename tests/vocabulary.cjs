@@ -5,12 +5,25 @@ const vm = require('node:vm');
 
 const page = fs.readFileSync('index.html', 'utf8');
 const start = page.indexOf('const initialDB =');
-const end = page.indexOf('let db = mergeVocabulary', start);
+const end = page.indexOf('let db = restoreVocabulary', start);
 assert(start >= 0 && end > start, 'Cannot find the vocabulary and merge logic');
 const scope = { pinyinPro: { pinyin: text => text }, window: {} };
 vm.createContext(scope);
+vm.runInContext(fs.readFileSync('vocabulary.js', 'utf8'), scope);
 vm.runInContext(page.slice(start, end) + '\nwords = mergeVocabulary(initialDB);', scope);
+vm.runInContext(`
+    migrated = restoreVocabulary([
+        { lao: 'ລະດັບນ້ຳ', meanings: ['水平仪', '水平尺', '水位'], cat: '工作' },
+        { lao: 'ເງິນ', meanings: ['钱', '银/钱'], cat: '生活' },
+        { lao: '个人词测试', zh: '保留', cat: '生活' }
+    ]);
+`, scope);
+assert.equal(scope.migrated.length, scope.words.length + 1);
+assert.equal(scope.migrated.find(word => word.lao === 'ລະດັບນ້ຳ').zh, '水位');
+assert.equal(scope.migrated.find(word => word.lao === 'ເງິນ').zh, '钱');
+assert(scope.migrated.some(word => word.lao === '个人词测试'));
 const words = scope.words;
+assert.equal(scope.window.NAMOU_VOCABULARY.length, words.length, 'Duplicate headword in source vocabulary');
 assert(words.length > 0, 'Missing vocabulary');
 assert.equal(new Set(words.map(word => word.lao)).size, words.length, 'Duplicate Lao headword');
 for (const word of words) {
