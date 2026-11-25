@@ -235,7 +235,7 @@
         <div class="study-top-panel">
             <div class="study-header">
                 <div class="study-label">🧠 记忆卡片</div>
-                <small>轻触卡片翻转，配合分类更好记。</small>
+                <button id="randomStudy" class="cat-btn" type="button" aria-pressed="false" onclick="toggleRandomStudy(this)">随机背诵</button>
             </div>
             <div class="progress-track"><div id="progressBar"></div></div>
             <div class="study-progress-label">
@@ -831,6 +831,7 @@ let memory = JSON.parse(localStorage.getItem('lao_memory_v11')) || { "全部":0,
 
 let currentCat = '全部';
 let currentList = [];
+let randomStudy = false;
 let currentIndex = 0;
 
 // ==========================================
@@ -944,13 +945,22 @@ function renderDict() {
 // 5. 背诵与记忆核心功能
 // ==========================================
 function setCat(cat, btnElement) {
+    const categoryChanged = currentCat !== cat;
     currentCat = cat;
-    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.cat-scroll .cat-btn').forEach(b => b.classList.remove('active'));
     btnElement.classList.add('active');
-    refreshStudy();
+    refreshStudy(categoryChanged);
 }
 
-function refreshStudy() {
+function toggleRandomStudy(button) {
+    randomStudy = !randomStudy;
+    button.setAttribute('aria-pressed', String(randomStudy));
+    button.classList.toggle('active', randomStudy);
+    refreshStudy(true);
+}
+
+function refreshStudy(resetRandom = false) {
+    if (randomStudy && !resetRandom) return updateCardUI();
     // 根据分类筛选数据
     if (currentCat === '错题') {
         currentList = [...wrongs];
@@ -960,8 +970,15 @@ function refreshStudy() {
         currentList = db.filter(item => item.cat === currentCat);
     }
 
-    // 读取该分类的历史记忆进度
-    currentIndex = findStudyPosition(currentList, memory[currentCat]);
+    if (randomStudy) {
+        for (let i = currentList.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [currentList[i], currentList[j]] = [currentList[j], currentList[i]];
+        }
+        currentIndex = 0;
+    } else {
+        currentIndex = findStudyPosition(currentList, memory[currentCat]);
+    }
     
     updateCardUI();
 }
@@ -1032,7 +1049,8 @@ function updateCardUI() {
     document.getElementById('progressText').innerText = `${currentNum}/${totalNum}`;
     document.getElementById('progressBar').style.width = `${(currentNum / totalNum) * 100}%`;
 
-    // 自动保存记忆
+    // 随机练习与顺序背诵的进度分开。
+    if (randomStudy) return;
     memory[currentCat] = { lao: laoKey(word.lao), index: currentIndex };
     localStorage.setItem('lao_memory_v11', JSON.stringify(memory));
 }
@@ -1056,6 +1074,11 @@ function handleResult(isRemembered) {
         if (currentCat === '错题') {
             wrongs = wrongs.filter(w => !sameVocabularyEntry(w, word));
             saveData();
+            if (randomStudy) {
+                currentList.splice(currentIndex, 1);
+                if (currentIndex >= currentList.length) currentIndex = 0;
+                return updateCardUI();
+            }
             if (currentIndex >= wrongs.length) currentIndex = 0;
             return refreshStudy(); // 刷新列表
         }
