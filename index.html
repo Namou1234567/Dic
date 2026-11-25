@@ -175,6 +175,14 @@
         .study-progress-label { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 12px; color: var(--text-sub); }
         #page-study .cat-scroll { gap: 5px; padding-bottom: 5px; }
         #page-study .cat-btn { padding: 5px 9px; }
+        @media (max-width: 420px) {
+            #page-study .cat-scroll { gap: 3px; }
+            #page-study .cat-btn { padding-inline: 4px; font-size: 12px; }
+        }
+        @media (max-width: 320px) {
+            #page-study .cat-scroll { gap: 2px; }
+            #page-study .cat-btn { padding-inline: 1px; font-size: 11px; }
+        }
         #page-study .flashcard-wrapper {
             height: 260px; height: clamp(176px, calc(100vh - 340px), 290px);
             height: clamp(176px, calc(100svh - 340px - env(safe-area-inset-bottom)), 290px);
@@ -248,7 +256,7 @@
             <button class="cat-btn active" onclick="setCat('全部', this)">全部词汇</button>
             <button class="cat-btn" onclick="setCat('生活', this)">🏠 生活</button>
             <button class="cat-btn" onclick="setCat('工作', this)">💼 工作</button>
-            <button id="randomStudy" class="cat-btn" type="button" aria-pressed="false" onclick="toggleRandomStudy(this)">随机</button>
+            <button id="randomStudy" class="cat-btn" type="button" aria-pressed="false" onclick="toggleRandomStudy(this)"><span aria-hidden="true">🎲</span> 随机</button>
             <button class="cat-btn" onclick="setCat('错题', this)" style="color:var(--danger); border-color:#ffcccb;">🚩 错题本</button>
         </div>
 
