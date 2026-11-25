@@ -188,11 +188,38 @@
             height: clamp(176px, calc(100svh - 340px - env(safe-area-inset-bottom)), 290px);
             margin-bottom: 8px;
         }
-        #page-study .card-face { padding: 32px 14px 26px; }
+        #page-study .card-face {
+            padding: 32px 16px 30px;
+            border-color: var(--line);
+            box-shadow: 0 8px 24px rgba(25, 62, 62, .09);
+        }
+        #page-study .card-front {
+            padding-top: 16px;
+            padding-bottom: 50px;
+            background: linear-gradient(155deg, #ffffff, #f0f8f6);
+        }
+        #page-study .word-lao-main { margin-bottom: 6px; }
+        #page-study .long-prompt .word-lao-main {
+            font-size: clamp(1.25rem, 5vw, 1.6rem);
+        }
         #page-study .word-lao-sub { margin-bottom: 6px; font-size: 1.125rem; }
-        #page-study .word-zh { font-size: 1.4rem; }
+        #page-study .word-zh { font-size: clamp(1.35rem, 5.8vw, 1.65rem); font-weight: 700; }
         #page-study .cat-badge { top: 7px; left: 9px; padding: 3px 8px; }
-        #page-study .hint-text { bottom: 6px; font-size: 12px; }
+        #page-study .hint-text { bottom: 8px; font-size: 13px; }
+        #page-study .card-front .hint-text {
+            left: 50%;
+            right: auto;
+            transform: translateX(-50%);
+            width: max-content;
+            max-width: calc(100% - 24px);
+            padding: 4px 14px;
+            border-radius: 999px;
+            background: #e3f1ee;
+            color: #23584f;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
         #cardSpeak { margin-top: 5px; }
         #page-study .action-bar { margin-top: 6px; gap: 8px; }
         #page-study .btn { min-height: 44px; padding: 8px; }
@@ -1027,6 +1054,7 @@ function updateCardUI() {
     document.getElementById('cardSpeak').disabled = currentList.length === 0;
     document.getElementById('cardLaoSpeak').disabled = currentList.length === 0;
     const card = document.getElementById('mainCard');
+    card.classList.toggle('long-prompt', (wordForSpeech?.lao.length || 0) > 26);
     setCardFlipped(card, false); // 切换单词时重置翻转状态
     
     // 空列表处理
