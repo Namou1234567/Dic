@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.7 · 2026-11-27
+
+- Show 「有新版本 vX，点此更新」 at the top when a newer version is published, checked when the page opens or returns to the foreground. One tap loads the new version without losing study progress. Home-screen web apps have no reload button, so they previously kept showing the old version.
+- Add a home-screen icon in the site colors with the name 小词典, a favicon and a web app manifest.
+
 ## 1.2.6 · 2026-11-27
 
 - Recover pronunciation on phones when the browser suspends or stalls audio, for example after many quick taps or after switching apps. Previously all pronunciation buttons could stop responding until the page was reopened. The audio channel is now replaced on the next tap, cached recordings are reused, and if the audio does not start within 2 seconds a message asks to tap again.

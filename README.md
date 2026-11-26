@@ -19,6 +19,7 @@ The site is published through GitHub Pages. The vocabulary and public recordings
    npx playwright install chromium webkit
    node tests/study-audio.cjs
    node tests/mobile-audio.cjs
+   node tests/update-banner.cjs
    ```
 
 6. Open a pull request on GitHub. Check **Dictionary checks**, then verify the live site after merging.
