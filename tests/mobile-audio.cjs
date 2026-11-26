@@ -7,14 +7,22 @@ async function check(browserType, device) {
         const page = await browser.newPage(devices[device]);
         await page.addInitScript(() => {
             window.namouAudioStarts = [];
+            window.namouContexts = [];
             const { start } = AudioBufferSourceNode.prototype;
             AudioBufferSourceNode.prototype.start = function (...args) {
                 const result = start.apply(this, args);
+                if (!window.namouContexts.includes(this.context)) window.namouContexts.push(this.context);
                 window.namouAudioStarts.push({
                     offset: args[1], duration: args[2], state: this.context.state
                 });
+                window.namouLastContext = window.namouContexts.indexOf(this.context);
                 return result;
             };
+            // Simulate a silent context whose clock does not advance.
+            const clock = Object.getOwnPropertyDescriptor(BaseAudioContext.prototype, 'currentTime');
+            Object.defineProperty(BaseAudioContext.prototype, 'currentTime', {
+                get() { return window.namouFreezeClock ? 0 : clock.get.call(this); }
+            });
             // Simulate a stalled audio context: resume() never settles while the flag is set.
             const { resume } = AudioContext.prototype;
             AudioContext.prototype.resume = function () {
@@ -57,7 +65,36 @@ async function check(browserType, device) {
         await page.waitForFunction(count => window.namouAudioStarts.length === count + 1, before, {timeout: 6000});
         assert.equal((await page.evaluate(() => window.namouAudioStarts.at(-1))).state, 'running');
         assert.deepEqual([...requests.values()], [1, 1]);
-        console.log(`Verified both pronunciation clips, cache reuse and stall recovery on ${device} (${browserType.name()}).`);
+
+        // After the page was in the background, the next tap uses a new context.
+        const tapAndWait = async () => {
+            const count = await page.evaluate(() => window.namouAudioStarts.length);
+            await chinese.tap();
+            await page.waitForFunction(c => window.namouAudioStarts.length === c + 1, count, {timeout: 6000});
+            return page.evaluate(() => window.namouLastContext);
+        };
+        await page.waitForTimeout(1500);
+        const beforeBackground = await tapAndWait();
+        await page.evaluate(() => {
+            for (const state of ['hidden', 'visible']) {
+                Object.defineProperty(document, 'visibilityState', { value: state, configurable: true });
+                document.dispatchEvent(new Event('visibilitychange'));
+            }
+        });
+        assert.notEqual(await tapAndWait(), beforeBackground);
+
+        // A context whose clock does not advance shows the retry message; the next tap recovers.
+        await page.waitForTimeout(1500);
+        await page.evaluate(() => {
+            document.getElementById('speechNotice').hidden = true;
+            window.namouFreezeClock = true;
+        });
+        const silent = await tapAndWait();
+        await page.waitForFunction(() => !document.getElementById('speechNotice').hidden, null, {timeout: 3000});
+        await page.evaluate(() => { window.namouFreezeClock = false; });
+        assert.notEqual(await tapAndWait(), silent);
+        assert.deepEqual([...requests.values()], [1, 1]);
+        console.log(`Verified both pronunciation clips, cache reuse, stall, background and silent-context recovery on ${device} (${browserType.name()}).`);
     } finally {
         await browser.close();
     }
