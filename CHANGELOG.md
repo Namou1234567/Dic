@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 · 2026-11-26
+
+- Add 98 reviewed hydropower work terms (the rows marked in red in the professional glossary), deduplicated by Lao headword against the existing vocabulary.
+- Where a reviewed term has the same Chinese meaning as an older entry with different Lao wording, keep the reviewed wording: remove 17 older entries and drop the duplicated meaning from ຫົວໜ້າກະ, which keeps 班长. The vocabulary now has 2,019 Lao headwords.
+- Add recordings for the new entries with the existing voices, and add a workflow that generates missing recordings automatically.
+
 ## 1.1.2 · 2026-11-26
 
 - Store only personal entries, additional meanings, missed headwords, and study progress locally. Migrate legacy storage and support importing older backups.
