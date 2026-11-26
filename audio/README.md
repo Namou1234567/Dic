@@ -1,6 +1,6 @@
 # Bilingual vocabulary audio
 
-The current public vocabulary requires 1,938 Lao clips and 1,950 Mandarin clips. Clips are grouped by language into MP3 files. The site loads audio on demand and uses the clip manifests to play the requested segment.
+The current public vocabulary requires 2,278 Lao clips and 2,233 Mandarin clips. Clips are grouped by language into MP3 files. The site loads audio on demand and uses the clip manifests to play the requested segment.
 
 | Language | Voice and generation method | Files |
 |---|---|---|
@@ -10,6 +10,11 @@ The current public vocabulary requires 1,938 Lao clips and 1,950 Mandarin clips.
 [Kokoro model](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) · [Kokoro model license](MODEL-LICENSE.txt) · [edge-tts project](https://github.com/rany2/edge-tts)
 
 ## Adding entries or regenerating audio
+
+The quickest way is automatic: push a branch that changes `vocabulary.js`. The **Generate missing audio** workflow (`.github/workflows/audio.yml`) runs `tools/generate_audio.py` on GitHub, synthesizes only the entries that have no clip yet with the voices above, writes them to newly numbered banks, updates both manifests, and commits the result back to the branch. Commits made by the workflow do not start other workflows, so push one more commit (an empty commit is fine) to rerun **Dictionary checks** on the pull request. You can also run the script locally with network access to Hugging Face and the edge-tts service.
+
+The manual steps below describe what the script does.
+
 
 1. From the repository root, run `node tests/vocabulary.cjs --export > /tmp/namou-words.json` to export deduplicated `zh` and `lao` text arrays. Use the exported text verbatim as manifest keys, preserving spelling, punctuation, and meanings.
 2. Synthesize each Mandarin entry with the Kokoro Chinese pipeline (`lang_code='z'`). In the synthesis input, turn slashes into pauses, remove parenthetical notes, and add a period at the end. Synthesize Lao entries individually, for example with `edge-tts --voice lo-LA-ChanthavongNeural --text 'ສະບາຍດີ' --write-media hello.mp3`. The generation environment needs access to the relevant model or service.

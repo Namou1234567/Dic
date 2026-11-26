@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0 · 2026-11-26
+
+- Add 340 hydropower work terms from the professional glossary, deduplicated by Lao headword against the existing vocabulary. The vocabulary now has 2,278 Lao headwords.
+- Add recordings for the new entries with the existing voices, and add a workflow that generates missing recordings automatically.
+
 ## 1.1.2 · 2026-11-26
 
 - Store only personal entries, additional meanings, missed headwords, and study progress locally. Migrate legacy storage and support importing older backups.
