@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.4 · 2026-11-26
+
+- Fix a briefly mirrored face while flipping flashcards on phones. The flip now uses a symmetric timing curve, so the card reaches 90° exactly when the front and back faces swap.
+
 ## 1.2.3 · 2026-11-26
 
 - Keep the search box at the top of the screen while scrolling the dictionary; the title row slides away so only the input stays visible.
