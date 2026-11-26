@@ -259,8 +259,10 @@
         #page-study .multiple-meanings .card-back { padding-top: 28px; padding-bottom: 12px; }
         #page-study .multiple-meanings .card-back .word-lao-sub,
         #page-study .multiple-meanings .card-back .hint-text { display: none; }
-        /* Search stays at the top while scrolling the dictionary. */
-        .dict-search { position: sticky; top: 0; z-index: 20; box-shadow: 0 6px 14px rgba(18,55,70,.08); }
+        /* Search stays at the top while scrolling the dictionary. The negative offset lets the title
+           row (12px padding + 24px line) slide above the screen so only the input box stays visible. */
+        .dict-search { position: sticky; top: -36px; z-index: 20; box-shadow: 0 6px 14px rgba(18,55,70,.08); }
+        .dict-search label { line-height: 24px; }
         .search-field { position: relative; }
         .search-field input.search-box { padding-right: 46px; }
         .search-clear {
