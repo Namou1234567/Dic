@@ -283,7 +283,7 @@
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.2.0</span></h1>
+            <h1>小词典 <span class="dict-version">v1.2.1</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
@@ -683,6 +683,18 @@ function initChineseSpeech() {
 // 1. Public vocabulary from vocabulary.js
 // ==========================================
 const initialDB = window.NAMOU_VOCABULARY;
+
+// Readings the pinyin library gets wrong for polyphonic characters. Displayed pinyin and
+// pinyin search both use these. Add a word or the shortest phrase that fixes the reading.
+const pinyinCorrections = {
+    '值长': 'zhí zhǎng',
+    '卷尺': 'juǎn chǐ',
+    '卷扬机': 'juǎn yáng jī',
+    '差旅': 'chāi lǚ',
+    '差动': 'chā dòng',
+    '空载': 'kōng zài'
+};
+if (typeof pinyinPro.customPinyin === 'function') pinyinPro.customPinyin(pinyinCorrections);
 
 // ==========================================
 // 2. State management

@@ -68,6 +68,18 @@ for (const word of words) {
     assert.equal(JSON.stringify(word.categories), JSON.stringify([word.cat]), word.lao);
 }
 
+const pinyinScope = { window: {} };
+pinyinScope.globalThis = pinyinScope;
+vm.createContext(pinyinScope);
+vm.runInContext(fs.readFileSync('vendor/pinyin-pro-3.29.5.js', 'utf8'), pinyinScope);
+vm.runInContext(page.match(/const pinyinCorrections = \{[\s\S]*?\};\nif \(.*\n/)[0], pinyinScope);
+for (const [text, reading] of [
+    ['值长', 'zhí zhǎng'], ['卷扬机', 'juǎn yáng jī'], ['津贴/差旅费', 'jīn tiē / chāi lǚ fèi'],
+    ['差动保护', 'chā dòng bǎo hù'], ['空载', 'kōng zài'], ['长度', 'cháng dù'], ['银行', 'yín háng']
+]) {
+    assert.equal(pinyinScope.pinyinPro.pinyin(text), reading, 'Incorrect pinyin for ' + text);
+}
+
 const lao = words.map(word => word.lao);
 const zh = [...new Set(words.flatMap(word => word.meanings))];
 if (process.argv[2] === '--export') {

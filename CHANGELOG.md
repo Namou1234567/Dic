@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 · 2026-11-26
+
+- Correct pinyin for polyphonic characters that the pinyin library reads wrongly: 值长 (zhí zhǎng), 卷尺 and 卷扬机 (juǎn), 差旅费 (chāi), 差动保护 (chā) and 空载 (zài). Displayed pinyin and pinyin search use the corrected readings. Recordings are unchanged.
+
 ## 1.2.0 · 2026-11-26
 
 - Add 98 reviewed hydropower work terms (the rows marked in red in the professional glossary), deduplicated by Lao headword against the existing vocabulary.
