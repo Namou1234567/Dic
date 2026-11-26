@@ -134,9 +134,26 @@
         .dict-header h1 { font-size: 2.5rem; line-height: 1.14; letter-spacing: .04em; margin: 0 0 8px; }
         .dict-version { margin-inline-start: .45rem; font-size: .75rem; font-weight: 600; letter-spacing: .03em; color: #d5edf0; white-space: nowrap; }
         .dict-header p { font-size: .9375rem; color: #d5edf0; letter-spacing: .06em; margin: 0; }
+        .dict-search {
+            margin-bottom: 14px; padding: 12px;
+            border: 1px solid #9bc7c4; border-radius: 16px; background: #e5f3f2;
+        }
+        .dict-search label {
+            display: block; margin-bottom: 7px;
+            color: #124e55; font-size: 17px; font-weight: 700;
+        }
         input.search-box {
-            min-height: 48px; background: #fff; border: 1px solid var(--line);
-            border-radius: 14px; font-size: 16px; margin-bottom: 14px; box-shadow: none;
+            min-height: 48px; background: #fff; border: 2px solid #3c8185;
+            border-radius: 12px; font-size: 16px; margin: 0; box-shadow: none;
+        }
+        .dict-more {
+            display: grid; justify-items: center; gap: 8px;
+            margin-top: 14px; font-size: 13px; color: var(--text-sub);
+        }
+        .dict-more button {
+            min-height: 44px; padding: 8px 20px; border-radius: 12px;
+            border: 1px solid #9bc7c4; background: #fff;
+            color: var(--primary); font-size: 15px; font-weight: 700; cursor: pointer;
         }
         .dict-item { border: 1px solid var(--line); border-radius: 16px; padding: 13px 14px; box-shadow: 0 2px 5px rgba(18,55,70,.04); }
         .dict-lao { font-size: 1.25rem; line-height: 1.45; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
@@ -268,8 +285,16 @@
             <h1>小词典 <span class="dict-version">v1.1.1</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
-        <input type="text" id="searchInput" aria-label="搜索老挝语、中文或拼音" class="search-box" placeholder="🔍 搜索老挝语、中文、拼音…" oninput="renderDict()">
+        <div class="dict-search" role="search">
+            <label for="searchInput">🔍 查词</label>
+            <input type="text" id="searchInput" aria-label="查词：搜索老挝语、中文或拼音" class="search-box"
+                placeholder="输入老挝语、中文或拼音" oninput="resetDictionaryBrowse()">
+        </div>
         <div id="dictContent"></div>
+        <div id="dictMore" class="dict-more" hidden>
+            <button id="dictMoreButton" type="button" onclick="showMoreDictionaryWords()" aria-controls="dictContent">显示更多</button>
+            <span id="dictCount" role="status"></span>
+        </div>
     </div>
 
     <div id="page-study" class="page">
@@ -933,9 +958,37 @@ function searchDictionary(query) {
     }).filter(match => Number.isFinite(match.rank)).sort((a, b) => a.rank - b.rank);
 }
 
-function renderDict() {
+const DICTIONARY_INITIAL_COUNT = 20;
+const DICTIONARY_BATCH_SIZE = 50;
+let dictionaryBrowseLimit = DICTIONARY_INITIAL_COUNT;
+
+function dictionaryBrowseOrder() {
+    const work = db.filter(word => word.cat === '工作');
+    const life = db.filter(word => word.cat === '生活');
+    let workIndex = 0;
+    let lifeIndex = 0;
+    return Array.from(db, (_, index) => {
+        // Match the overall category ratio without reordering either category.
+        const workTarget = Math.round((index + 1) * work.length / db.length);
+        return workIndex < workTarget ? work[workIndex++] : life[lifeIndex++];
+    });
+}
+
+function resetDictionaryBrowse() {
+    dictionaryBrowseLimit = DICTIONARY_INITIAL_COUNT;
+    renderDict();
+}
+
+function showMoreDictionaryWords() {
+    const start = dictionaryBrowseLimit;
+    dictionaryBrowseLimit = Math.min(start + DICTIONARY_BATCH_SIZE, db.length);
+    renderDict(start);
+}
+
+function renderDict(start = 0) {
     const query = document.getElementById('searchInput').value.trim();
-    const result = query ? searchDictionary(query) : db.slice(0, 20).map(word => ({ word, matchedIndices: [] }));
+    const result = query ? searchDictionary(query)
+        : dictionaryBrowseOrder().slice(start, dictionaryBrowseLimit).map(word => ({ word, matchedIndices: [] }));
 
     const html = result.map(() => `
         <div class="dict-item">
@@ -952,9 +1005,10 @@ function renderDict() {
     `).join('');
     
     const dictContent = document.getElementById('dictContent');
-    dictContent.innerHTML = html || '<div style="text-align:center; padding:30px; color:#999;">未找到相关词汇</div>';
+    const fragment = document.createElement('template');
+    fragment.innerHTML = html || '<div style="text-align:center; padding:30px; color:var(--text-sub);">未找到相关词汇</div>';
     // 直接使用词条数据，不把中文拼入 onclick，兼容引号等特殊字符。
-    dictContent.querySelectorAll('.zh-speak-btn').forEach((button, index) => {
+    fragment.content.querySelectorAll('.zh-speak-btn').forEach((button, index) => {
         const picker = document.createElement('select');
         picker.className = 'meaning-picker';
         picker.setAttribute('aria-label', '选择要朗读的中文译义');
@@ -981,6 +1035,15 @@ function renderDict() {
         if (!picker.hidden) button.before(picker);
         button.addEventListener('click', () => speakChinese(picker.value));
     });
+    if (start && !query) dictContent.append(fragment.content);
+    else dictContent.replaceChildren(fragment.content);
+
+    const shown = Math.min(dictionaryBrowseLimit, db.length);
+    const allShown = shown === db.length;
+    document.getElementById('dictMore').hidden = Boolean(query) || !db.length;
+    document.getElementById('dictMoreButton').hidden = allShown;
+    document.getElementById('dictCount').textContent = allShown
+        ? `已显示全部 ${db.length} 条词汇` : `已显示 ${shown} / ${db.length} 条`;
 }
 
 // ==========================================
