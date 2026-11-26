@@ -944,19 +944,33 @@ function legacyWrongKeys(words) {
     return Array.isArray(words) ? words.map(word => word?.lao) : [];
 }
 
+function readStored(key, fallback, missing = fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (raw === null) return missing;
+        const value = JSON.parse(raw);
+        const valid = Array.isArray(fallback) ? Array.isArray(value)
+            : value !== null && typeof value === 'object' && !Array.isArray(value);
+        if (valid) return value;
+    } catch {
+        // 读取或解析失败时使用默认值，让页面仍可打开。
+    }
+    console.warn(`本地数据 ${key} 无法读取或格式不正确，已使用默认值。`);
+    return fallback;
+}
+
 const customKey = 'lao_custom_v12';
 const wrongKey = 'lao_wrong_v12';
-const savedCustom = localStorage.getItem(customKey);
-const legacyVocabulary = localStorage.getItem('lao_db_v11');
+const savedCustom = readStored(customKey, [], null);
+const legacyVocabulary = readStored('lao_db_v11', [], null);
 let custom = savedCustom === null
-    ? extractCustomEntries(JSON.parse(legacyVocabulary), true)
-    : extractCustomEntries(JSON.parse(savedCustom));
+    ? extractCustomEntries(legacyVocabulary, true)
+    : extractCustomEntries(savedCustom);
 let db = mergeVocabulary([...initialDB, ...custom]);
-const savedWrong = localStorage.getItem(wrongKey);
-const legacyWrong = localStorage.getItem('lao_wrong_v11');
-const savedWrongKeys = savedWrong === null
-    ? legacyWrongKeys(JSON.parse(legacyWrong)) : JSON.parse(savedWrong);
-let wrongs = mergeWrongEntries(Array.isArray(savedWrongKeys) ? savedWrongKeys : [], db);
+const savedWrong = readStored(wrongKey, [], null);
+const legacyWrong = readStored('lao_wrong_v11', [], null);
+const savedWrongKeys = savedWrong === null ? legacyWrongKeys(legacyWrong) : savedWrong;
+let wrongs = mergeWrongEntries(savedWrongKeys, db);
 
 function saveWrongEntries() {
     localStorage.setItem(wrongKey, JSON.stringify(wrongs.map(word => word.lao)));
@@ -973,7 +987,7 @@ if (legacyVocabulary !== null || legacyWrong !== null) {
     localStorage.removeItem('lao_db_v11');
     localStorage.removeItem('lao_wrong_v11');
 }
-let memory = JSON.parse(localStorage.getItem('lao_memory_v11')) || { "全部":0, "生活":0, "工作":0, "错题":0 };
+let memory = readStored('lao_memory_v11', { "全部":0, "生活":0, "工作":0, "错题":0 });
 
 let currentCat = '全部';
 let currentList = [];
