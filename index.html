@@ -259,7 +259,10 @@
         #page-study .multiple-meanings .card-back { padding-top: 28px; padding-bottom: 12px; }
         #page-study .multiple-meanings .card-back .word-lao-sub,
         #page-study .multiple-meanings .card-back .hint-text { display: none; }
-        .dict-meanings ruby { font-size: 16px; }
+        .dict-meanings { display: grid; gap: 2px; }
+        .dict-meaning { line-height: 1.5; }
+        .dict-zh { font-size: 16px; color: var(--text-main); }
+        .dict-py { font-size: 14px; color: var(--text-sub); }
         .matched-meaning { background: #ffedab; color: #25343b; border-radius: 3px; }
         .lao-speak-btn { background: #eef4fa; color: #244c71; border-color: #c7d9e8; }
         .dict-actions .speak-btn { white-space: nowrap; min-width: 0; }
@@ -283,7 +286,7 @@
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.2.1</span></h1>
+            <h1>小词典 <span class="dict-version">v1.2.2</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
@@ -1100,6 +1103,45 @@ function showMoreDictionaryWords() {
     renderDict(start);
 }
 
+// Find which characters of a meaning matched the search so only they are highlighted.
+// Returns [start, end) in characters, or null if the match cannot be located.
+function matchedRange(text, query) {
+    const fold = value => value.normalize('NFKC').toLowerCase();
+    const toneless = value => fold(value).normalize('NFD')
+        .replace(/ü/g, 'v').replace(/[̀-ͯ'’-]/g, '').replace(/\s+/g, '');
+    const chars = Array.from(text);
+    const keyword = Array.from(fold(query).replace(/\s+/g, ''));
+    if (!keyword.length) return null;
+
+    // Direct text match, ignoring spaces inside the meaning.
+    const kept = chars.flatMap((char, index) => /\s/.test(char) ? [] : [[fold(char), index]]);
+    for (let i = 0; i + keyword.length <= kept.length; i++) {
+        if (keyword.every((char, offset) => kept[i + offset][0] === char)) {
+            return [kept[i][1], kept[i + keyword.length - 1][1] + 1];
+        }
+    }
+
+    // Pinyin match starting at a syllable; the last syllable may be typed partially.
+    const phonetic = toneless(query);
+    const syllables = pinyinPro.pinyin(text, { type: 'array' }).map(toneless);
+    if (!phonetic || syllables.length !== chars.length) return null;
+    for (let i = 0; i < syllables.length; i++) {
+        if (!syllables[i]) continue;
+        let rest = phonetic;
+        let end = i;
+        while (end < syllables.length && rest) {
+            const syllable = syllables[end];
+            if (!syllable) { end++; continue; }
+            if (rest.startsWith(syllable)) rest = rest.slice(syllable.length);
+            else if (syllable.startsWith(rest)) rest = '';
+            else break;
+            end++;
+        }
+        if (!rest) return [i, end];
+    }
+    return null;
+}
+
 function renderDict(start = 0) {
     const query = document.getElementById('searchInput').value.trim();
     const result = query ? searchDictionary(query)
@@ -1134,16 +1176,28 @@ function renderDict(start = 0) {
         row.querySelector('.dict-category').textContent = word.cat;
         const meanings = row.querySelector('.dict-meanings');
         const pronunciations = word.py.split('；');
+        // One line per meaning: the Chinese text followed by its pinyin.
         word.meanings.forEach((text, meaningIndex) => {
-            if (meaningIndex) meanings.append('；');
-            const ruby = document.createElement('ruby');
-            const label = document.createElement(matchedIndices.includes(meaningIndex) ? 'mark' : 'span');
-            if (label.tagName === 'MARK') label.className = 'matched-meaning';
-            label.textContent = text;
-            const rt = document.createElement('rt');
-            rt.textContent = pronunciations[meaningIndex] || '';
-            ruby.append(label, rt);
-            meanings.appendChild(ruby);
+            const line = document.createElement('div');
+            line.className = 'dict-meaning';
+            const label = document.createElement('span');
+            label.className = 'dict-zh';
+            if (matchedIndices.includes(meaningIndex)) {
+                // Highlight only the matched characters; fall back to the whole meaning.
+                const chars = Array.from(text);
+                const [from, to] = matchedRange(text, query) || [0, chars.length];
+                const mark = document.createElement('mark');
+                mark.className = 'matched-meaning';
+                mark.textContent = chars.slice(from, to).join('');
+                label.append(chars.slice(0, from).join(''), mark, chars.slice(to).join(''));
+            } else {
+                label.textContent = text;
+            }
+            const pinyin = document.createElement('span');
+            pinyin.className = 'dict-py';
+            pinyin.textContent = pronunciations[meaningIndex] || '';
+            line.append(label, ' ', pinyin);
+            meanings.appendChild(line);
         });
         fillMeanings(picker, word);
         picker.selectedIndex = matchedIndices[0] ?? 0;
