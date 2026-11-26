@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0 · 2026-11-27
+
+- Re-record all Mandarin audio with the Microsoft female voice Xiaoxiao (`zh-CN-XiaoxiaoNeural`) at a slightly slower rate (-10%). The old recordings sometimes started weakly, so the first sound was hard to hear.
+- Lao audio is unchanged.
+- The audio generator now requests clips in parallel and rebuilds a language's audio automatically when its voice changes.
+
 ## 1.2.9 · 2026-11-27
 
 - Move the update banner lower so it no longer sits against the top of the screen.

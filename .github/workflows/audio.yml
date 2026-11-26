@@ -2,13 +2,13 @@ name: Generate missing audio
 
 # Synthesizes recordings for vocabulary entries that have no audio yet, using the
 # same voices as the existing clips, and commits the new banks and manifests back
-# to the branch. Runs on pushes to non-main branches that change vocabulary.js,
-# or manually from the Actions tab.
+# to the branch. Runs on pushes to non-main branches that change vocabulary.js or the
+# generator, or manually from the Actions tab.
 on:
   workflow_dispatch:
   push:
     branches-ignore: [main]
-    paths: [vocabulary.js]
+    paths: [vocabulary.js, tools/generate_audio.py]
 
 permissions:
   contents: write
@@ -33,8 +33,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install "kokoro>=0.9.4" "misaki[zh]>=0.9.4" soundfile numpy edge-tts
+          pip install numpy edge-tts
       - name: Generate missing clips
         run: python3 tools/generate_audio.py
       - name: Check vocabulary and clip ranges
@@ -48,5 +47,5 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Add recordings for new vocabulary entries"
+          git commit -m "Update vocabulary recordings"
           git push
