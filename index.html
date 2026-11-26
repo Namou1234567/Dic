@@ -965,18 +965,19 @@ let dictionaryBrowseLimit = DICTIONARY_INITIAL_COUNT;
 function dictionaryBrowseOrder() {
     const work = db.filter(word => word.cat === '工作');
     const life = db.filter(word => word.cat === '生活');
-    const openingCount = Math.min(500, db.length);
+    const firstLifeCount = Math.min(DICTIONARY_INITIAL_COUNT, life.length);
+    const openingCount = Math.min(500 - firstLifeCount, db.length - firstLifeCount);
     const openingWork = Math.min(work.length, Math.max(
-        openingCount - life.length, Math.round(openingCount * 0.42)
+        openingCount - (life.length - firstLifeCount), Math.round(openingCount * 0.42)
     ));
-    const laterWorkRatio = (work.length - openingWork) / (db.length - openingCount || 1);
+    const laterWorkRatio = (work.length - openingWork) / (db.length - firstLifeCount - openingCount || 1);
     let workIndex = 0;
     let lifeIndex = 0;
     return Array.from(db, (_, index) => {
-        const position = index + 1;
-        // Give life vocabulary a little more space near the start.
+        if (index < firstLifeCount) return life[lifeIndex++];
+        const position = index - firstLifeCount + 1;
         const workTarget = position <= openingCount
-            ? Math.round(position * openingWork / openingCount)
+            ? Math.ceil(position * openingWork / openingCount)
             : openingWork + Math.round((position - openingCount) * laterWorkRatio);
         return workIndex < workTarget ? work[workIndex++] : life[lifeIndex++];
     });
