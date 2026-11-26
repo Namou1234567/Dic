@@ -1,6 +1,6 @@
 # Bilingual vocabulary audio
 
-The current public vocabulary requires 2,223 Lao clips and 2,233 Mandarin clips. Clips are grouped by language into MP3 files. The site loads audio on demand and uses the clip manifests to play the requested segment.
+The current public vocabulary requires 2,019 Lao clips and 2,030 Mandarin clips. Clips are grouped by language into MP3 files. The site loads audio on demand and uses the clip manifests to play the requested segment.
 
 | Language | Voice and generation method | Files |
 |---|---|---|
