@@ -3,6 +3,7 @@
 ## 1.2.2 · 2026-11-26
 
 - In dictionary results, show pinyin after the Chinese text instead of above it, so Lao descenders no longer overlap the pinyin and characters are no longer spaced out. Entries with several meanings show each meaning on its own line. Flashcards are unchanged.
+- Highlight only the matched characters in search results instead of the whole meaning, for both Chinese and pinyin searches (for example 备用 in 备用电源).
 
 ## 1.2.1 · 2026-11-26
 
