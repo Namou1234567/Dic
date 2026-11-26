@@ -2,7 +2,8 @@
 
 ## 1.2.0 · 2026-11-26
 
-- Add 340 hydropower work terms from the professional glossary, deduplicated by Lao headword against the existing vocabulary. The vocabulary now has 2,278 Lao headwords.
+- Add 340 hydropower work terms from the professional glossary, deduplicated by Lao headword against the existing vocabulary.
+- Where a new term has the same Chinese meaning as an older entry with different Lao wording, keep the glossary wording: remove 55 older entries and drop the duplicated meaning from 2 others (ຫົວໜ້າກະ keeps 班长, ອຸໂມງສົ່ງນ້ຳ keeps 引水隧道). The vocabulary now has 2,223 Lao headwords.
 - Add recordings for the new entries with the existing voices, and add a workflow that generates missing recordings automatically.
 
 ## 1.1.2 · 2026-11-26
