@@ -335,7 +335,7 @@
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.2.7</span></h1>
+            <h1>小词典 <span class="dict-version">v1.2.8</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
@@ -464,6 +464,7 @@ const bufferedBanks = new Map();
 const pendingBufferedBanks = new Map();
 const BUFFERED_BANK_LIMIT = 4;
 const RESUME_TIMEOUT_MS = 2000;
+const SILENT_CHECK_MS = 600;
 // Set when the shared audio context stops responding, so the next tap replaces it.
 let bufferedContextStalled = false;
 
@@ -490,11 +491,13 @@ function getBufferedContext(AudioContext) {
     return fresh;
 }
 
-// After returning from another app, check the context before the next tap.
+// iOS can return a context from the background that reports "running" but stays silent.
+// Replace it on the first tap after the page was hidden or restored, whatever its state.
 document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && bufferedAudioContext
-        && bufferedAudioContext.state !== 'running') bufferedContextStalled = true;
+    if (document.visibilityState === 'hidden') bufferedContextStalled = true;
 });
+window.addEventListener('pagehide', () => { bufferedContextStalled = true; });
+window.addEventListener('pageshow', () => { bufferedContextStalled = true; });
 
 function loadBufferedBank(url, context) {
     if (bufferedBanks.has(url)) {
@@ -580,6 +583,15 @@ async function playBufferedClip(text, clip, AudioContext) {
         playback.source = source;
         clearTimeout(playback.timer);
         setSpeechStatus('正在朗读：' + text);
+        // A silent context keeps its clock still. Check that audio time advances (every clip
+        // is longer than this check); otherwise replace the context on the next tap.
+        const startedAt = context.currentTime;
+        playback.timer = setTimeout(() => {
+            if (bufferedClip !== playback || context.currentTime > startedAt + 0.05) return;
+            bufferedContextStalled = true;
+            stopBufferedClip();
+            showSpeechNotice('声音暂时没有反应，请再点一次朗读按钮。');
+        }, SILENT_CHECK_MS);
     } catch (error) {
         if (bufferedClip !== playback) return;
         stopBufferedClip();

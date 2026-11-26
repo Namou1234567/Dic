@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.8 · 2026-11-27
+
+- Fix silent pronunciation after switching to another app and back, especially in the home-screen app on iPhone. The audio channel is now replaced on the first tap after the page was in the background, even when it reports that it is running. If audio time does not advance after a tap, a message asks to tap again and the next tap uses a new channel. Cached recordings are reused.
+
 ## 1.2.7 · 2026-11-27
 
 - Show 「有新版本 vX，点此更新」 at the top when a newer version is published, checked when the page opens or returns to the foreground. One tap loads the new version without losing study progress. Home-screen web apps have no reload button, so they previously kept showing the old version.
