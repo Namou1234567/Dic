@@ -23,7 +23,7 @@
             font-display: swap;
             unicode-range: U+0E80-0EFF;
         }
-        .dict-lao, .word-lao-main, .word-lao-sub, #searchInput {
+        .dict-lao, .word-lao-main, .word-lao-sub, .dict-search [lang="lo"], #searchInput {
             font-family: "Phetsarath OT", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
         :root { 
@@ -286,8 +286,8 @@
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
-            <label for="searchInput">🔍 查词</label>
-            <input type="text" id="searchInput" aria-label="查词：搜索老挝语、中文或拼音" class="search-box"
+            <label for="searchInput"><span aria-hidden="true">🔍</span> 查词 · <span lang="lo">ຄົ້ນຫາຄຳສັບ</span></label>
+            <input type="text" id="searchInput" aria-label="查词 · ຄົ້ນຫາຄຳສັບ：搜索老挝语、中文或拼音" class="search-box"
                 placeholder="输入老挝语、中文或拼音" oninput="resetDictionaryBrowse()">
         </div>
         <div id="dictContent"></div>
