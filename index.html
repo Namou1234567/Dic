@@ -32,7 +32,7 @@
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-color); margin: 0; padding-bottom: 90px; color: var(--text-main); -webkit-tap-highlight-color: transparent; }
         
-        /* 底部导航栏 */
+        /* Bottom navigation */
         .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); display: flex; border-top: 1px solid #e5e5ea; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
         .tab-item { flex: 1; text-align: center; padding: 12px 0; font-size: 11px; color: var(--text-sub); cursor: pointer; border: none; background: none; transition: color 0.2s; }
         .tab-item.active { color: var(--primary); font-weight: 500; }
@@ -43,15 +43,15 @@
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 全局卡片风格 */
+        /* Shared card styles */
         .panel { background: var(--card-bg); border-radius: 16px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 16px; }
 
-        /* 搜索与词典 */
+        /* Search and dictionary */
         .search-box { width: 100%; padding: 14px 18px; border: none; border-radius: 14px; background: var(--card-bg); box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 20px; color: var(--text-main); }
         .dict-title { text-align: center; font-size: 28px; font-weight: bold; color: var(--primary); margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,122,255,0.1); }
         .dict-item { background: var(--card-bg); padding: 16px 20px; border-radius: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
         
-        /* 中文朗读：保留原有词典与翻卡操作 */
+        /* Chinese pronunciation controls for the dictionary and flashcards */
         .speech-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
         .speech-notice { position: fixed; left: 16px; right: 16px; bottom: 90px; z-index: 1100; max-width: 560px; margin: auto; padding: 12px 16px; border-radius: 12px; background: #333; color: #fff; font-size: 14px; line-height: 1.5; box-shadow: 0 4px 20px #0002; }
         .speak-btn { min-width: 76px; min-height: 44px; padding: 8px 12px; border: 1px solid #c7dfff; border-radius: 12px; background: #eef6ff; color: #005bbb; font-size: 14px; cursor: pointer; }
@@ -62,7 +62,7 @@
         .dict-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
         #cardSpeak { margin-top: 12px; }
 
-        /* 背诵页顶部装饰 */
+        /* Study header */
         .study-top-panel { background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,248,255,0.9)); border: 1px solid rgba(0,122,255,0.18); border-radius: 24px; padding: 18px 18px 16px; box-shadow: 0 16px 40px rgba(0,122,255,0.08); margin-bottom: 20px; }
         .study-header { text-align: center; margin-bottom: 12px; }
         .study-label { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 999px; background: rgba(0,122,255,0.14); color: var(--primary); font-size: 16px; font-weight: 700; }
@@ -70,19 +70,19 @@
         .progress-track { background: #e5e5ea; height: 8px; border-radius: 999px; overflow: hidden; margin-bottom: 16px; }
         #progressBar { height: 100%; background: linear-gradient(90deg, #007aff, #34c759); width: 0%; transition: width 0.4s ease; border-radius: 999px; }
 
-        /* 分类过滤器 */
+        /* Category filters */
         .cat-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
         .cat-scroll::-webkit-scrollbar { display: none; }
         .cat-btn { padding: 10px 16px; border-radius: 20px; background: var(--card-bg); border: 1px solid #e5e5ea; font-size: 13px; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s ease; }
         .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 500; }
 
-        /* 背诵翻转卡片 */
+        /* Flip cards */
         .flashcard-wrapper { perspective: 1000px; height: 320px; margin: 0 auto 24px; max-width: 430px; }
         .flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; cursor: pointer; }
         .flashcard.animated-flip { transition: transform 0.6s cubic-bezier(0.4,0.2,0.2,1); }
         .flashcard.flipped { transform: rotateY(180deg); }
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%); box-shadow: 0 18px 38px rgba(0,0,0,0.08); padding: 24px; box-sizing: border-box; }
-        /* 隐藏未显示的卡面，避免翻转时出现镜像按钮。 */
+        /* Hide the inactive face to prevent mirrored controls during flips. */
         .flashcard.animated-flip .card-face { transition: visibility 0s 0.3s; }
         .flashcard:not(.flipped) .card-back, .flashcard.flipped .card-front {
             visibility: hidden;
@@ -90,7 +90,7 @@
         }
         .card-back { transform: rotateY(180deg); background: linear-gradient(180deg, #fbfdff 0%, #e8f1ff 100%); border: 1px solid rgba(0,122,255,0.14); }
 
-        /* 卡片字体设计 */
+        /* Card typography */
         .word-lao-main { font-size: 42px; font-weight: 800; color: var(--primary); margin-bottom: 12px; text-align: center; line-height: 1.05; }
         .word-lao-sub { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 18px; opacity: 0.88; text-align: center; }
         .word-zh { font-size: 28px; line-height: 1.3; font-weight: 600; color: var(--text-main); text-align: center; }
@@ -98,22 +98,22 @@
         .cat-badge { position: absolute; top: 18px; left: 18px; padding: 6px 12px; border-radius: 999px; background: rgba(0,122,255,0.1); color: var(--primary); font-size: 12px; font-weight: 600; }
         .hint-text { position: absolute; bottom: 18px; font-size: 13px; color: var(--text-sub); }
 
-        /* 底部操作按钮 */
+        /* Study action buttons */
         .action-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 12px; }
         .btn { min-height: 52px; border-radius: 18px; padding: 14px; font-size: 15px; }
         .btn-know { background: var(--success); color: white; box-shadow: 0 10px 24px rgba(52,199,89,0.18); }
         .btn-dont { background: var(--card-bg); color: var(--danger); border: 1px solid rgba(255,59,48,0.18); }
         .btn-normal { background: #e5e5ea; color: var(--text-main); }
 
-        /* 管理页表单 */
+        /* Administration form */
         input[type="text"], select { width: 100%; padding: 14px; border: 1px solid #e5e5ea; border-radius: 12px; margin-bottom: 12px; font-size: 15px; box-sizing: border-box; outline: none; background: #fafafa; }
         input[type="text"]:focus, select:focus { border-color: var(--primary); background: #fff; }
         
-        /* 数据统计面板 */
+        /* Statistics panel */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
         .stat-box { background: var(--card-bg); padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
         .stat-num { font-size: 28px; font-weight: bold; color: var(--text-main); display: block; margin-bottom: 4px; }
-        /* 水电学习界面 */
+        /* Hydropower learning interface */
         :root {
             --primary: #125b68;
             --success: #176858;
@@ -384,16 +384,16 @@
 </nav>
 
 <script>
-// 中文朗读仅在用户点击时同步调用 speak，避免移动端失去用户手势权限。
+// Call speak synchronously from the tap handler to preserve mobile user activation.
 const speechSupported = !!window.speechSynthesis && typeof window.SpeechSynthesisUtterance === 'function';
 let chineseVoice = null;
 let availableVoices = [];
 let activeRecordedAudio = null;
 let recordedBoundaryTimer = null;
 let speechNoticeTimer = null;
-let activeUtterance = null; // 保留引用，并忽略已取消语音的延迟回调。
+let activeUtterance = null; // Keep a reference and ignore delayed callbacks from canceled speech.
 
-// 公共词库使用本站音频，不要求设备安装中文 TTS。
+// Public entries use hosted audio and require no Chinese TTS installation.
 function showSpeechNotice(message) {
     const notice = document.getElementById('speechNotice');
     notice.textContent = message;
@@ -421,9 +421,9 @@ function loadBufferedBank(url, context) {
     const { signal } = request.controller;
     request.promise = (async () => {
         const response = await fetch(url, { signal });
-        if (!response.ok) throw new Error('音频下载失败');
+        if (!response.ok) throw new Error('Audio download failed');
         const buffer = await context.decodeAudioData(await response.arrayBuffer());
-        // 解码本身无法取消，已取消的请求不能重新写入缓存。
+        // Decoding cannot be canceled. Discard results from aborted requests.
         if (!signal.aborted) {
             bufferedBanks.set(url, buffer);
             if (bufferedBanks.size > BUFFERED_BANK_LIMIT) {
@@ -443,7 +443,7 @@ function stopBufferedClip(nextUrl) {
     const playback = bufferedClip;
     bufferedClip = null;
     clearTimeout(playback.timer);
-    // 连续点同一音频包时保留正在加载的请求，取消旧播放即可。
+    // Reuse the in-flight request for the same bank and cancel only the previous playback.
     if (playback.url !== nextUrl) {
         const request = pendingBufferedBanks.get(playback.url);
         pendingBufferedBanks.delete(playback.url);
@@ -496,7 +496,7 @@ function playRecordedSpeech(text, clip) {
     const isAppleMobile = /iPad|iPhone|iPod/i.test(userAgent)
         || (platform === 'MacIntel' && maxTouchPoints > 1);
     if (AudioContext && (isAppleMobile || /Android/i.test(userAgent))) {
-        // 从点击中开启播放会话，避免 iOS 将语音当作受静音键控制的环境音。
+        // Set the playback session on tap so iOS does not treat speech as ambient audio.
         if (isAppleMobile && audioSession) {
             try { audioSession.type = 'playback'; } catch {}
         }
@@ -509,7 +509,7 @@ function playRecordedSpeech(text, clip) {
     audio.hidden = true;
     document.body.appendChild(audio);
     audio.preload = 'auto';
-    audio.muted = true; // 首次定位完成前保持静音，防止部分浏览器从文件头出声。
+    audio.muted = true; // Mute until the initial seek completes to avoid playing the start of the file.
     const isCurrent = () => activeRecordedAudio === audio;
     const finish = () => {
         if (!isCurrent()) return;
@@ -524,7 +524,7 @@ function playRecordedSpeech(text, clip) {
     };
     audio.onloadedmetadata = () => {
         if (!isCurrent()) return;
-        // 同时使用媒体时间片段和显式定位，兼容不同浏览器。
+        // Use both a media fragment and an explicit seek for browser compatibility.
         if (Math.abs(audio.currentTime - clip.start) > 0.15) audio.currentTime = clip.start;
     };
     audio.onplaying = () => {
@@ -548,7 +548,7 @@ function playRecordedSpeech(text, clip) {
     };
     recordedBoundaryTimer = setInterval(checkBoundary, 40);
     try {
-        // 直接在用户点击中启动 HTML 音频播放；不等待异步下载或系统语音。
+        // Start HTML audio in the click handler without waiting for downloads or system speech.
         const playing = audio.play();
         if (playing && typeof playing.catch === 'function') playing.catch(() => {
             if (!isCurrent()) return;
@@ -601,7 +601,7 @@ function stopChineseSpeech(nextUrl) {
     if (wasActive) refreshVoices();
 }
 
-// 点击后短暂保留按下颜色，避免手机轻点时反馈一闪而过。
+// Keep the pressed color briefly so feedback is noticeable on mobile.
 const speechButtonTimers = new WeakMap();
 document.addEventListener('click', event => {
     const button = event.target.closest('.speak-btn');
@@ -630,7 +630,7 @@ function speakChinese(text) {
         playRecordedSpeech(text.trim(), clip);
         return;
     }
-    // 个人新增词条使用原系统朗读；不冒充已经配好的公共词库音频。
+    // Use system speech for personal entries without a public recording.
     refreshVoices();
     if (!speechSupported) {
         showSpeechNotice('这个自定义词语尚未配音，当前浏览器不支持系统朗读。');
@@ -662,7 +662,7 @@ function speakChinese(text) {
         showSpeechNotice('系统朗读失败；这个自定义词语尚未配音，请检查中文语音或更换浏览器。');
     };
     try {
-        // 不等待 voiceschanged，也不在异步回调中自动播放，保留点击手势。
+        // Start in the click handler without waiting for voiceschanged or an asynchronous callback.
         window.speechSynthesis.speak(utterance);
     } catch (error) {
         utterance.onerror();
@@ -680,12 +680,12 @@ function initChineseSpeech() {
 }
 
 // ==========================================
-// 1. 数据配置区：公共词库（来自 vocabulary.js）
+// 1. Public vocabulary from vocabulary.js
 // ==========================================
 const initialDB = window.NAMOU_VOCABULARY;
 
 // ==========================================
-// 2. 状态管理
+// 2. State management
 // ==========================================
 const correctedLaoSpellings = new Map([
     ['ການຊຳລະງິນ', 'ການຊຳລະເງິນ'],
@@ -696,7 +696,7 @@ function laoKey(text) {
     return correctedLaoSpellings.get(key) || key;
 }
 
-// 公共词条以新版分类为准，旧备份仍可保留个人词条和译义。
+// Use current categories for public entries and keep personal entries and meanings from older backups.
 const workVocabulary = new Set(initialDB.filter(word => word.cat === '工作').map(word => laoKey(word.lao)));
 const publicVocabulary = new Map(initialDB.map(word => [
     laoKey(word.lao), new Set(word.zh.split('；').map(meaning => meaning.trim()))
@@ -726,7 +726,7 @@ function mergeVocabulary(words) {
     }));
 }
 
-// 仅用于迁移 v11 存储和旧版备份，过滤旧公共译义。
+// Filter obsolete public meanings only when migrating v11 storage or legacy backups.
 const previousMeanings = new Map(Object.entries({
   "ເງິນ": [
     "银/钱"
@@ -953,9 +953,9 @@ function readStored(key, fallback, missing = fallback) {
             : value !== null && typeof value === 'object' && !Array.isArray(value);
         if (valid) return value;
     } catch {
-        // 读取或解析失败时使用默认值，让页面仍可打开。
+        // Fall back to defaults if storage cannot be read or parsed.
     }
-    console.warn(`本地数据 ${key} 无法读取或格式不正确，已使用默认值。`);
+    console.warn(`Could not read stored data for ${key} or its format is invalid. Using the default value.`);
     return fallback;
 }
 
@@ -981,7 +981,7 @@ function saveData() {
     saveWrongEntries();
 }
 
-// 先保存新版数据，成功后才移除旧键。
+// Save the new data before removing the legacy keys.
 if (legacyVocabulary !== null || legacyWrong !== null) {
     saveData();
     localStorage.removeItem('lao_db_v11');
@@ -995,9 +995,9 @@ let randomStudy = false;
 let currentIndex = 0;
 
 // ==========================================
-// 3. 页面与路由
+// 3. Pages and navigation
 // ==========================================
-// 恢复开放时将此开关改为 true。
+// Set this flag to true to re-enable the administration page.
 const ADMIN_PAGE_ENABLED = false;
 document.getElementById('adminTab').hidden = !ADMIN_PAGE_ENABLED;
 
@@ -1016,9 +1016,9 @@ function navTo(pageId, tabElement) {
 }
 
 // ==========================================
-// 4. 词典功能
+// 4. Dictionary
 // ==========================================
-// 拼音允许不带声调或空格。老挝语保留声调和元音符号。
+// Accept pinyin without tones or spaces. Preserve Lao tone and vowel marks.
 function searchDictionary(query) {
     const compact = value => value.normalize('NFKC').toLowerCase().replace(/\s+/g, '');
     const pinyin = value => compact(value).normalize('NFD')
@@ -1110,7 +1110,7 @@ function renderDict(start = 0) {
     const dictContent = document.getElementById('dictContent');
     const fragment = document.createElement('template');
     fragment.innerHTML = html || '<div style="text-align:center; padding:30px; color:var(--text-sub);">未找到相关词汇</div>';
-    // 直接使用词条数据，不把中文拼入 onclick，兼容引号等特殊字符。
+    // Use entry data directly in the event handler so quotes and other characters remain literal.
     fragment.content.querySelectorAll('.zh-speak-btn').forEach((button, index) => {
         const picker = document.createElement('select');
         picker.className = 'meaning-picker';
@@ -1154,7 +1154,7 @@ function renderDict(start = 0) {
 }
 
 // ==========================================
-// 5. 背诵与记忆核心功能
+// 5. Flashcards and study progress
 // ==========================================
 function setCat(cat, btnElement) {
     const categoryChanged = currentCat !== cat;
@@ -1173,7 +1173,7 @@ function toggleRandomStudy(button) {
 
 function refreshStudy(resetRandom = false) {
     if (randomStudy && !resetRandom) return updateCardUI();
-    // 根据分类筛选数据
+    // Filter entries by category.
     if (currentCat === '错题') {
         currentList = [...wrongs];
     } else if (currentCat === '全部') {
@@ -1239,9 +1239,9 @@ function updateCardUI() {
     document.getElementById('cardLaoSpeak').disabled = currentList.length === 0;
     const card = document.getElementById('mainCard');
     card.classList.toggle('long-prompt', (wordForSpeech?.lao.length || 0) > 26);
-    setCardFlipped(card, false); // 切换单词时重置翻转状态
+    setCardFlipped(card, false); // Reset the card face when changing words.
     
-    // 空列表处理
+    // Handle an empty list.
     if (currentList.length === 0) {
         document.getElementById('cardLaoFront').innerText = "太棒了";
         document.getElementById('cardLaoBack').innerText = "空空如也";
@@ -1252,25 +1252,25 @@ function updateCardUI() {
         return;
     }
 
-    // 渲染卡片数据
+    // Render the current card.
     const word = currentList[currentIndex];
     
-    // 正面
+    // Front face.
     document.getElementById('cardLaoFront').innerText = word.lao;
     
-    // 背面 (双面显示：原词 + 翻译)
+    // Back face with the headword and translation.
     document.getElementById('cardLaoBack').innerText = word.lao;
     renderCardMeaning(word.zh, word.py);
     document.getElementById('cardCatTag').innerText = word.cat;
     document.getElementById('cardCatTag').style.display = 'block';
 
-    // 进度条
+    // Progress bar.
     const currentNum = currentIndex + 1;
     const totalNum = currentList.length;
     document.getElementById('progressText').innerText = `${currentNum}/${totalNum}`;
     document.getElementById('progressBar').style.width = `${(currentNum / totalNum) * 100}%`;
 
-    // 随机练习与顺序背诵的进度分开。
+    // Keep randomized practice separate from ordered study progress.
     if (randomStudy) return;
     memory[currentCat] = { lao: laoKey(word.lao), index: currentIndex };
     localStorage.setItem('lao_memory_v11', JSON.stringify(memory));
@@ -1285,13 +1285,13 @@ function handleResult(isRemembered) {
     const word = currentList[currentIndex];
     
     if (!isRemembered) {
-        // 记入错题本 (去重)
+        // Add the word to the review list once.
         if (!wrongs.some(w => sameVocabularyEntry(w, word))) {
             wrongs.push(word);
             saveWrongEntries();
         }
     } else {
-        // 如果在错题本里点击了“记住了”，则从错题本移除
+        // Remove the word from the review list when marked as remembered.
         if (currentCat === '错题') {
             wrongs = wrongs.filter(w => !sameVocabularyEntry(w, word));
             saveWrongEntries();
@@ -1301,10 +1301,10 @@ function handleResult(isRemembered) {
                 return updateCardUI();
             }
             if (currentIndex >= wrongs.length) currentIndex = 0;
-            return refreshStudy(); // 刷新列表
+            return refreshStudy(); // Refresh the list.
         }
     }
-    navStep(1); // 自动进入下一个
+    navStep(1); // Advance to the next card.
 }
 
 function navStep(step) {
@@ -1314,7 +1314,7 @@ function navStep(step) {
 }
 
 // ==========================================
-// 6. 管理、备份与恢复
+// 6. Administration, backups, and restore
 // ==========================================
 function updateAdminStats() {
     document.getElementById('stat-total').innerText = db.length;
@@ -1342,7 +1342,7 @@ function addNewWord() {
     updateAdminStats();
 }
 
-// 导出备份 (生成JSON文件)
+// Export a JSON backup.
 function exportData() {
     const exportObj = { version: 2, custom, wrongs: wrongs.map(word => word.lao) };
     const dataStr = JSON.stringify(exportObj);
@@ -1358,7 +1358,7 @@ function exportData() {
     URL.revokeObjectURL(url);
 }
 
-// 导入恢复 (读取JSON文件)
+// Restore from a JSON backup.
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1392,7 +1392,7 @@ function importData(event) {
         }
     };
     reader.readAsText(file);
-    event.target.value = ''; // 清空选择，允许重复导入同一个文件
+    event.target.value = ''; // Clear the selection so the same file can be imported again.
 }
 
 function resetData() {
@@ -1407,7 +1407,7 @@ function resetData() {
 }
 
 // ==========================================
-// 初始化启动
+// Initialize the page
 // ==========================================
 window.onload = () => {
     initChineseSpeech();
