@@ -31,6 +31,4 @@ jobs:
             if curl -fsS http://127.0.0.1:8765/ -o /dev/null; then break; fi
             sleep 1
           done
-          node tests/study-audio.cjs
-          node tests/mobile-audio.cjs
-          node tests/update-banner.cjs
+          node tests/browser.cjs

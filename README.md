@@ -1,38 +1,48 @@
 # Xiao Cidian (小词典)
 
-A Lao–Chinese learning aid for the Nam Ou hydropower station. Search in Lao, Chinese, or pinyin, listen to bilingual recordings, and study flashcards by work or everyday-life category. The review list keeps track of missed words.
+A Lao–Chinese learning aid for the Nam Ou hydropower station. Search in Lao, Chinese, or pinyin, listen to recordings in both languages, and study flashcards by work or everyday-life category. Missed words go to a review list.
 
 [Open the online dictionary](https://namou1234567.github.io/Dic/)
 
-The site is published through GitHub Pages. The vocabulary and public recordings ship with the site. Study progress and missed words are saved in the current browser.
+Study progress and missed words are saved only in the user's own browser.
 
-## Maintenance and publishing
-
-1. Edit entries in `vocabulary.js`. Separate distinct Chinese meanings with a full-width semicolon (`；`). Each entry contains the Lao headword (`lao`), Chinese meaning (`zh`), and category (`cat`). Use `工作` (work) or `生活` (everyday life) as the category value. When adding a meaning to an existing headword, keep its original spelling so the site can combine the meanings.
-2. When adding or changing Lao spellings or Chinese meanings, update the audio files and manifests together using the [audio maintenance guide](audio/README.md). A category-only change does not require new recordings.
-3. After changing `vocabulary.js` or files under `audio/`, update the `?v=` cache version on the corresponding `<script>` URLs in `index.html`. Mobile browsers may otherwise keep using an older cached version.
-4. From the repository root, run `node tests/vocabulary.cjs`. This requires Node.js and FFmpeg, including `ffprobe`.
-5. Preview locally with `python3 -m http.server 8765` and check search, categories, and pronunciation. In another terminal, run the playback checks below. Install both Chromium and WebKit with `npx playwright install chromium webkit` before running the mobile playback test.
-
-   ```sh
-   npm install --no-save --package-lock=false playwright@1.65.1
-   npx playwright install chromium webkit
-   node tests/study-audio.cjs
-   node tests/mobile-audio.cjs
-   node tests/update-banner.cjs
-   ```
-
-6. Open a pull request on GitHub. Check **Dictionary checks**, then verify the live site after merging.
-
-## File locations
+## Files
 
 | Contents | Location |
 |---|---|
 | Pages, search, flashcards, and playback | `index.html` |
-| Public vocabulary | `vocabulary.js` |
-| Mandarin and Lao audio and clip manifests | `audio/` |
-| Lao fonts and license | `fonts/` |
-| Pinyin library and license | `vendor/` |
-| Automated checks | `tests/`, `.github/workflows/check.yml` |
+| Vocabulary | `vocabulary.js` |
+| Recordings and clip manifests | `audio/` |
+| Recording generator | `tools/generate_audio.py` |
+| Lao font, pinyin library, and their licenses | `fonts/`, `vendor/` |
+| Checks | `tests/`, `.github/workflows/` |
 
-[View the changelog](CHANGELOG.md)
+## Updating the vocabulary
+
+1. Edit `vocabulary.js`. Each entry has a Lao headword (`lao`), Chinese meaning (`zh`), and category (`cat`: `工作` or `生活`). Separate several Chinese meanings with `；`.
+2. Push the change to a branch other than `main`. The **Generate missing audio** workflow records the new entries and commits the audio to the branch. Push one more commit (an empty one is fine) so **Dictionary checks** runs on the result.
+3. Raise the version number in `index.html` (`dict-version`) and the `?v=` values on its `<script>` tags, so phones load the new files and show the update banner.
+4. Open a pull request, wait for **Dictionary checks**, and merge.
+
+## Recordings
+
+| Language | Voice | Files |
+|---|---|---|
+| Mandarin | Microsoft `zh-CN-XiaoxiaoNeural`, rate -10% | `audio/mandarin-*.mp3`, `audio/manifest.js` |
+| Lao | Microsoft `lo-LA-ChanthavongNeural` | `audio/lao/chanthavong-*.mp3`, `audio/lao/manifest.js` |
+
+Recordings are made with [edge-tts](https://github.com/rany2/edge-tts) and packed up to 50 clips per MP3 file. The manifests store each clip's file and time range. `tools/generate_audio.py` records only the entries without a clip and puts them in new files. If the voice in the script changes, it re-records that whole language. A Chinese meaning that a user adds personally is read by the browser's own voice.
+
+## Local checks
+
+Requires Node.js and FFmpeg.
+
+```sh
+node tests/vocabulary.cjs
+npm install --no-save --package-lock=false playwright@1.65.1
+npx playwright install chromium webkit
+python3 -m http.server 8765 &
+node tests/browser.cjs
+```
+
+[Changelog](CHANGELOG.md)
