@@ -78,11 +78,12 @@
 
         /* 背诵翻转卡片 */
         .flashcard-wrapper { perspective: 1000px; height: 320px; margin: 0 auto 24px; max-width: 430px; }
-        .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4,0.2,0.2,1); transform-style: preserve-3d; cursor: pointer; }
+        .flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; cursor: pointer; }
+        .flashcard.animated-flip { transition: transform 0.6s cubic-bezier(0.4,0.2,0.2,1); }
         .flashcard.flipped { transform: rotateY(180deg); }
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%); box-shadow: 0 18px 38px rgba(0,0,0,0.08); padding: 24px; box-sizing: border-box; }
         /* Hide the inactive face explicitly to avoid mirrored controls in 3D layers. */
-        .card-face { transition: visibility 0s 0.3s; }
+        .flashcard.animated-flip .card-face { transition: visibility 0s 0.3s; }
         .flashcard:not(.flipped) .card-back, .flashcard.flipped .card-front {
             visibility: hidden;
             pointer-events: none;
@@ -188,7 +189,7 @@
         }
         @media (prefers-reduced-motion: reduce) {
             .page { animation: none; }
-            .flashcard, .card-face, #progressBar { transition: none; }
+            .flashcard.animated-flip, .flashcard.animated-flip .card-face, #progressBar { transition: none; }
         }
         #page-study .study-top-panel { padding: 10px 14px; margin-bottom: 10px; }
         #page-study .study-header { margin-bottom: 6px; }
@@ -319,7 +320,7 @@
         </div>
 
         <div class="flashcard-wrapper">
-            <div id="mainCard" class="flashcard" onclick="stopChineseSpeech(); setCardFlipped(this, !this.classList.contains('flipped'))">
+            <div id="mainCard" class="flashcard" onclick="stopChineseSpeech(); setCardFlipped(this, !this.classList.contains('flipped'), true)">
                 <div class="card-front card-face">
                     <div id="cardLaoFront" class="word-lao-main">ສະບາຍດີ</div>
                     <button id="cardLaoSpeak" class="speak-btn lao-speak-btn" type="button" onclick="event.stopPropagation(); speakLao(currentList[currentIndex]?.lao)" aria-label="朗读当前老挝语词条">🔊 老挝语</button>
@@ -1123,7 +1124,8 @@ function fillMeanings(picker, word) {
     picker.hidden = meanings.length < 2;
 }
 
-function setCardFlipped(card, flipped) {
+function setCardFlipped(card, flipped, animate = false) {
+    card.classList.toggle('animated-flip', animate);
     card.querySelector('.card-front').inert = flipped;
     card.querySelector('.card-back').inert = !flipped;
     card.classList.toggle('flipped', flipped);
