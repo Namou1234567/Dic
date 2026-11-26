@@ -960,6 +960,7 @@ function searchDictionary(query) {
 
 const DICTIONARY_INITIAL_COUNT = 20;
 const DICTIONARY_BATCH_SIZE = 50;
+const DICTIONARY_BROWSE_CAP = 999;
 let dictionaryBrowseLimit = DICTIONARY_INITIAL_COUNT;
 
 function dictionaryBrowseOrder() {
@@ -990,7 +991,7 @@ function resetDictionaryBrowse() {
 
 function showMoreDictionaryWords() {
     const start = dictionaryBrowseLimit;
-    dictionaryBrowseLimit = Math.min(start + DICTIONARY_BATCH_SIZE, db.length);
+    dictionaryBrowseLimit = Math.min(start + DICTIONARY_BATCH_SIZE, DICTIONARY_BROWSE_CAP, db.length);
     renderDict(start);
 }
 
@@ -1050,9 +1051,12 @@ function renderDict(start = 0) {
     const shown = Math.min(dictionaryBrowseLimit, db.length);
     const allShown = shown === db.length;
     document.getElementById('dictMore').hidden = Boolean(query) || !db.length;
-    document.getElementById('dictMoreButton').hidden = allShown;
+    document.getElementById('dictMoreButton').hidden = allShown || shown === DICTIONARY_BROWSE_CAP;
     document.getElementById('dictCount').textContent = allShown
-        ? `已显示全部 ${db.length} 条词汇` : `已显示 ${shown} / ${db.length} 条`;
+        ? `已显示全部 ${db.length} 条词汇`
+        : shown === DICTIONARY_BROWSE_CAP
+            ? `已显示 ${shown} 条，其余词汇可用搜索查找`
+            : `已显示 ${shown} / ${db.length} 条`;
 }
 
 // ==========================================
