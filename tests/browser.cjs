@@ -1,7 +1,37 @@
+// Browser checks for flashcard audio, mobile playback and the update banner.
+// Serve the site first, for example with `python3 -m http.server 8765`.
 const assert = require('node:assert/strict');
 const { chromium, devices, webkit } = require('playwright');
 
-async function check(browserType, device) {
+// Flashcards: the Lao and Mandarin buttons play separate audio on opposite card faces.
+async function checkFlashcardAudio() {
+    const browser = await chromium.launch();
+    try {
+        const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+        await page.goto(process.env.NAMOU_TEST_URL || 'http://127.0.0.1:8765');
+        await page.getByRole('button', { name: /背诵/ }).click();
+        const card = page.locator('#mainCard');
+        const lao = page.locator('#cardLaoSpeak');
+        const zh = page.locator('#cardSpeak');
+        const audio = page.locator('#recordedSpeechAudio');
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+
+        assert.equal(await card.locator('.card-back').getAttribute('inert'), '');
+        await lao.click();
+        assert.match(await audio.getAttribute('src'), /^audio\/lao\/chanthavong-/);
+        await page.getByText('点击卡片翻看答案', { exact: true }).click();
+        assert.equal(await card.locator('.card-front').getAttribute('inert'), '');
+        assert.equal(await audio.count(), 0, 'Flipping should stop the previous clip');
+        await zh.click();
+        assert.match(await audio.getAttribute('src'), /^audio\/mandarin-/);
+        console.log('Verified that the Lao and Mandarin buttons play separate audio on opposite card faces.');
+    } finally {
+        await browser.close();
+    }
+}
+
+// Phones: playback, cache reuse, and recovery after stalls, backgrounding and silent contexts.
+async function checkMobileAudio(browserType, device) {
     const browser = await browserType.launch();
     try {
         const page = await browser.newPage(devices[device]);
@@ -100,7 +130,41 @@ async function check(browserType, device) {
     }
 }
 
-Promise.all([check(webkit, 'iPhone 15'), check(chromium, 'Pixel 7')]).catch(error => {
+// The update banner stays hidden for the current version, appears when a newer version is
+// published, and loads the new version under a new address when tapped.
+async function checkUpdateBanner() {
+    const browser = await chromium.launch();
+    try {
+        const base = process.env.NAMOU_TEST_URL || 'http://127.0.0.1:8765/';
+        const page = await browser.newPage({ viewport: { width: 393, height: 852 } });
+        await page.goto(base);
+        await page.waitForFunction(() => document.querySelector('.dict-item'));
+        await page.waitForTimeout(500);
+        assert.equal(await page.locator('#updateBanner').isHidden(), true, 'Banner shown for the current version');
+
+        await page.route(/index\.html\?check=/, async route => {
+            const response = await route.fetch();
+            const body = (await response.text()).replace(/class="dict-version">v[\d.]+</, 'class="dict-version">v9.9.9<');
+            await route.fulfill({ response, body });
+        });
+        await page.reload();
+        const banner = page.locator('#updateBanner');
+        await banner.waitFor({ state: 'visible', timeout: 5000 });
+        assert.equal((await banner.innerText()).trim(), '有新版本 v9.9.9，点此更新');
+        await banner.click();
+        await page.waitForURL(/\?v=v9\.9\.9$/);
+        await page.unrouteAll({ behavior: 'ignoreErrors' });
+        console.log('Verified the update banner and one-tap update.');
+    } finally {
+        await browser.close();
+    }
+}
+
+(async () => {
+    await checkFlashcardAudio();
+    await Promise.all([checkMobileAudio(webkit, 'iPhone 15'), checkMobileAudio(chromium, 'Pixel 7')]);
+    await checkUpdateBanner();
+})().catch(error => {
     console.error(error);
     process.exitCode = 1;
 });

@@ -2,84 +2,24 @@
 
 ## 1.3.0 · 2026-11-27
 
-- Re-record all Mandarin audio with the Microsoft female voice Xiaoxiao (`zh-CN-XiaoxiaoNeural`) at a slightly slower rate (-10%). The old recordings sometimes started weakly, so the first sound was hard to hear.
-- Lao audio is unchanged.
-- The audio generator now requests clips in parallel and rebuilds a language's audio automatically when its voice changes.
+- Mandarin recordings now use the Microsoft female voice Xiaoxiao at a slightly slower rate, so every word starts clearly. Lao recordings are unchanged.
 
-## 1.2.9 · 2026-11-27
+## 1.2 · 2026-11-26 to 2026-11-27
 
-- Move the update banner lower so it no longer sits against the top of the screen.
+- Add 98 reviewed hydropower work terms. Where they overlap older entries, the reviewed Lao wording is kept. The vocabulary has 2,019 Lao headwords.
+- Correct pinyin for polyphonic words such as 值长 (zhí zhǎng), 卷尺, 差旅费, 差动保护 and 空载.
+- Dictionary: pinyin follows the Chinese text, several meanings appear on separate lines, only the matched characters are highlighted, and the search box stays at the top with a clear button and a result count. Entries are larger, with a category label and line speaker icons.
+- Flashcards: no mirrored face during the flip, no accidental zoom on quick double taps, and shuffled practice is labelled 「随机 N/M」 so it is not mistaken for ordered progress.
+- Phones: pronunciation recovers after stalls or after switching apps, including the home-screen app on iPhone.
+- A banner 「有新版本，点此更新」 appears when a new version is published. Add a home-screen icon.
 
-## 1.2.8 · 2026-11-27
+## 1.1 · 2026-11-24 to 2026-11-26
 
-- Fix silent pronunciation after switching to another app and back, especially in the home-screen app on iPhone. The audio channel is now replaced on the first tap after the page was in the background, even when it reports that it is running. If audio time does not advance after a tap, a message asks to tap again and the next tap uses a new channel. Cached recordings are reused.
+- Update meanings from the revised vocabulary sheet and add common hydropower terms.
+- Add recordings in both languages, with playback on iPhone, iPad and Android.
+- Add shuffled flashcards that keep ordered progress and missed words.
+- Save only personal entries, missed words and progress in the browser; older backups can still be imported.
 
-## 1.2.7 · 2026-11-27
+## 1.0 · 2026-11-24
 
-- Show 「有新版本 vX，点此更新」 at the top when a newer version is published, checked when the page opens or returns to the foreground. One tap loads the new version without losing study progress. Home-screen web apps have no reload button, so they previously kept showing the old version.
-- Add a home-screen icon in the site colors with the name 小词典, a favicon and a web app manifest.
-
-## 1.2.6 · 2026-11-27
-
-- Recover pronunciation on phones when the browser suspends or stalls audio, for example after many quick taps or after switching apps. Previously all pronunciation buttons could stop responding until the page was reopened. The audio channel is now replaced on the next tap, cached recordings are reused, and if the audio does not start within 2 seconds a message asks to tap again.
-
-## 1.2.5 · 2026-11-26
-
-- Stop the page from zooming in when a button is tapped twice quickly on phones (for example 记住了 on flashcards). Pinch zoom still works, and taps respond without the double-tap delay.
-- In shuffled flashcard practice, show the counter as 「随机 N/M」 in amber with the label 「随机练习 · 不影响顺序进度」, so it is not mistaken for ordered study progress being reset.
-
-## 1.2.4 · 2026-11-26
-
-- Fix a briefly mirrored face while flipping flashcards on phones. The flip now uses a symmetric timing curve, so the card reaches 90° exactly when the front and back faces swap.
-
-## 1.2.3 · 2026-11-26
-
-- Keep the search box at the top of the screen while scrolling the dictionary; the title row slides away so only the input stays visible.
-- Add a clear (×) button to the search box and show the number of results while searching.
-- Use a line speaker icon on all pronunciation buttons in place of the 🔊 emoji, and give the two buttons in each dictionary entry the same width.
-- Show the category next to the Lao headword as a small colored label (work in blue, everyday life in green) instead of beside the buttons.
-- Enlarge dictionary entry text (Lao 23 px, Chinese 18 px, pinyin 15 px) and align it to the top of the entry.
-
-## 1.2.2 · 2026-11-26
-
-- In dictionary results, show pinyin after the Chinese text instead of above it, so Lao descenders no longer overlap the pinyin and characters are no longer spaced out. Entries with several meanings show each meaning on its own line. Flashcards are unchanged.
-- Highlight only the matched characters in search results instead of the whole meaning, for both Chinese and pinyin searches (for example 备用 in 备用电源).
-
-## 1.2.1 · 2026-11-26
-
-- Correct pinyin for polyphonic characters that the pinyin library reads wrongly: 值长 (zhí zhǎng), 卷尺 and 卷扬机 (juǎn), 差旅费 (chāi), 差动保护 (chā) and 空载 (zài). Displayed pinyin and pinyin search use the corrected readings. Recordings are unchanged.
-
-## 1.2.0 · 2026-11-26
-
-- Add 98 reviewed hydropower work terms (the rows marked in red in the professional glossary), deduplicated by Lao headword against the existing vocabulary.
-- Where a reviewed term has the same Chinese meaning as an older entry with different Lao wording, keep the reviewed wording: remove 17 older entries and drop the duplicated meaning from ຫົວໜ້າກະ, which keeps 班长. The vocabulary now has 2,019 Lao headwords.
-- Add recordings for the new entries with the existing voices, and add a workflow that generates missing recordings automatically.
-
-## 1.1.2 · 2026-11-26
-
-- Store only personal entries, additional meanings, missed headwords, and study progress locally. Migrate legacy storage and support importing older backups.
-- Reuse up to four decoded audio banks on mobile and share concurrent requests for the same bank.
-- Render flashcard meanings and pinyin as plain text. Update the reset message and the displayed version number. See [#20](https://github.com/Namou1234567/Dic/pull/20).
-
-## 1.1.1 · 2026-11-25 · Stable
-
-- Fix Lao and Mandarin playback on iPhone and iPad and add mobile playback tests. See [#18](https://github.com/Namou1234567/Dic/pull/18).
-- Add shuffled flashcards within the selected category while preserving ordered study progress and missed words. See [#19](https://github.com/Namou1234567/Dic/pull/19).
-- Fit all five study controls on one row at the tested mobile widths. Enlarge the flip hint and adjust card spacing and text hierarchy.
-- Move the repository to `Namou1234567/Dic` and update the [online dictionary link](https://namou1234567.github.io/Dic/).
-
-## 1.1.0 · 2026-11-24
-
-- Update Lao–Chinese meanings from the revised vocabulary sheet and incorporate common hydropower station terms. The public vocabulary contains 1,938 headwords, including 906 work and 1,032 everyday-life entries. See [#17](https://github.com/Namou1234567/Dic/pull/17).
-- Standardize the Lao spellings for “equality” and “pay/settle the bill.” Keep only “water level” as the meaning of `ລະດັບນ້ຳ`.
-- Add bilingual recordings and move the public vocabulary to `vocabulary.js`. Preserve existing browser study progress and missed words.
-
-## 1.0.0 · 2026-11-24
-
-Stable baseline. See the [corresponding commit](https://github.com/Namou1234567/Dic/commit/f118635e3afb60dede9d7d1df5ac096aeda55e8d).
-
-- Support Lao, Chinese, and pinyin search and combine the Chinese meanings of identical Lao headwords. See [#6](https://github.com/Namou1234567/Dic/pull/6), [#9](https://github.com/Namou1234567/Dic/pull/9), and [#10](https://github.com/Namou1234567/Dic/pull/10).
-- Provide Mandarin and Lao audio, support Android playback, and add tap feedback. See [#4](https://github.com/Namou1234567/Dic/pull/4), [#11](https://github.com/Namou1234567/Dic/pull/11), [#12](https://github.com/Namou1234567/Dic/pull/12), and [#13](https://github.com/Namou1234567/Dic/pull/13).
-- Include 1,438 entries, with 446 work and 992 everyday-life entries. Fix a bug where the Chinese audio button could play Lao after a card was flipped. See [#14](https://github.com/Namou1234567/Dic/pull/14) and [#15](https://github.com/Namou1234567/Dic/pull/15).
-
-[Full commit history](https://github.com/Namou1234567/Dic/commits/main/)
+- Lao, Chinese and pinyin search, flashcards by category, and recordings for 1,438 entries.
