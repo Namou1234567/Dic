@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.6 · 2026-11-27
+
+- Recover pronunciation on phones when the browser suspends or stalls audio, for example after many quick taps or after switching apps. Previously all pronunciation buttons could stop responding until the page was reopened. The audio channel is now replaced on the next tap, cached recordings are reused, and if the audio does not start within 2 seconds a message asks to tap again.
+
 ## 1.2.5 · 2026-11-26
 
 - Stop the page from zooming in when a button is tapped twice quickly on phones (for example 记住了 on flashcards). Pinch zoom still works, and taps respond without the double-tap delay.
