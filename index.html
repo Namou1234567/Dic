@@ -259,10 +259,33 @@
         #page-study .multiple-meanings .card-back { padding-top: 28px; padding-bottom: 12px; }
         #page-study .multiple-meanings .card-back .word-lao-sub,
         #page-study .multiple-meanings .card-back .hint-text { display: none; }
+        /* Search stays at the top while scrolling the dictionary. */
+        .dict-search { position: sticky; top: 0; z-index: 20; box-shadow: 0 6px 14px rgba(18,55,70,.08); }
+        .search-field { position: relative; }
+        .search-field input.search-box { padding-right: 46px; }
+        .search-clear {
+            position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+            width: 36px; height: 36px; border: 0; border-radius: 50%;
+            background: #e3eef0; color: #3c5b63; font-size: 22px; line-height: 1; cursor: pointer;
+        }
+        .search-clear:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+        .dict-result-count { margin: 0 4px 10px; font-size: 13px; color: var(--text-sub); }
+        /* Entry text: Lao headword with its category, then one line per meaning. */
+        .dict-item { align-items: flex-start; }
+        .dict-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; margin-bottom: 4px; }
+        .dict-head .dict-lao { font-size: 1.45rem; line-height: 1.4; margin-bottom: 0; }
+        .dict-head .dict-category { padding: 1px 7px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .dict-category.cat-work { background: #e8f0fb; color: #2b5f9e; }
+        .dict-category.cat-life { background: #e7f5ec; color: #2c7a4b; }
         .dict-meanings { display: grid; gap: 2px; }
         .dict-meaning { line-height: 1.5; }
-        .dict-zh { font-size: 16px; color: var(--text-main); }
-        .dict-py { font-size: 14px; color: var(--text-sub); }
+        .dict-zh { font-size: 18px; color: var(--text-main); }
+        .dict-py { font-size: 15px; color: var(--text-sub); }
+        /* Pronunciation buttons: line icon, equal widths in the dictionary list. */
+        .speak-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+        .speak-icon { width: 1.15em; height: 1.15em; flex: none; }
+        .dict-actions { flex-direction: column; align-items: flex-end; }
+        .dict-actions .speak-btn { width: 84px; min-height: 40px; padding: 5px 8px; font-size: 13px; border-radius: 10px; }
         .matched-meaning { background: #ffedab; color: #25343b; border-radius: 3px; }
         .lao-speak-btn { background: #eef4fa; color: #244c71; border-color: #c7d9e8; }
         .dict-actions .speak-btn { white-space: nowrap; min-width: 0; }
@@ -286,14 +309,18 @@
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.2.2</span></h1>
+            <h1>小词典 <span class="dict-version">v1.2.3</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
             <label for="searchInput"><span aria-hidden="true">🔍</span> 查词 · <span lang="lo">ຄົ້ນຫາຄຳສັບ</span></label>
-            <input type="text" id="searchInput" aria-label="查词 · ຄົ້ນຫາຄຳສັບ：搜索老挝语、中文或拼音" class="search-box"
-                placeholder="输入老挝语、中文或拼音" oninput="resetDictionaryBrowse()">
+            <div class="search-field">
+                <input type="text" id="searchInput" aria-label="查词 · ຄົ້ນຫາຄຳສັບ：搜索老挝语、中文或拼音" class="search-box"
+                    placeholder="输入老挝语、中文或拼音" oninput="resetDictionaryBrowse()">
+                <button id="searchClear" class="search-clear" type="button" aria-label="清空搜索" onclick="clearSearch()" hidden>×</button>
+            </div>
         </div>
+        <p id="dictResultCount" class="dict-result-count" role="status" hidden></p>
         <div id="dictContent"></div>
         <div id="dictMore" class="dict-more" hidden>
             <button id="dictMoreButton" type="button" onclick="showMoreDictionaryWords()" aria-controls="dictContent">显示更多</button>
@@ -326,7 +353,7 @@
             <div id="mainCard" class="flashcard" onclick="stopChineseSpeech(); setCardFlipped(this, !this.classList.contains('flipped'), true)">
                 <div class="card-front card-face">
                     <div id="cardLaoFront" class="word-lao-main">ສະບາຍດີ</div>
-                    <button id="cardLaoSpeak" class="speak-btn lao-speak-btn" type="button" onclick="event.stopPropagation(); speakLao(currentList[currentIndex]?.lao)" aria-label="朗读当前老挝语词条">🔊 老挝语</button>
+                    <button id="cardLaoSpeak" class="speak-btn lao-speak-btn" type="button" onclick="event.stopPropagation(); speakLao(currentList[currentIndex]?.lao)" aria-label="朗读当前老挝语词条"><svg class="speak-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>老挝语</span></button>
                     <div class="hint-text">点击卡片翻看答案</div>
                 </div>
                 <div class="card-back card-face" inert>
@@ -334,7 +361,7 @@
                     <div id="cardLaoBack" class="word-lao-sub">ສະບາຍດີ</div>
                     <ruby id="cardZhPy" class="word-zh">你好<rt>nǐ hǎo</rt></ruby>
                     <select id="cardMeaning" class="meaning-picker" aria-label="选择要朗读的中文译义" onclick="event.stopPropagation()" hidden></select>
-                    <button id="cardSpeak" class="speak-btn" type="button" onclick="event.stopPropagation(); speakChinese(document.getElementById('cardMeaning').value)" aria-label="朗读当前词语的中文意思">🔊 中文</button>
+                    <button id="cardSpeak" class="speak-btn" type="button" onclick="event.stopPropagation(); speakChinese(document.getElementById('cardMeaning').value)" aria-label="朗读当前词语的中文意思"><svg class="speak-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>中文</span></button>
                     <div class="hint-text">如果没记住，请点击“不认识”</div>
                 </div>
             </div>
@@ -578,7 +605,7 @@ function refreshVoices() {
         || availableVoices.find(v => /^(zh-hans|cmn)(-|$)/.test(language(v)))
         || availableVoices.find(v => /^zh(-|$)/.test(language(v))) || null;
     if (!activeUtterance && !activeRecordedAudio) {
-        setSpeechStatus(chineseVoice ? '中文语音已就绪，点击“🔊 中文”即可朗读。'
+        setSpeechStatus(chineseVoice ? '中文语音已就绪，点击“中文”朗读按钮即可朗读。'
             : availableVoices.length ? '未找到中文语音，请在设备的语音设置中安装或下载中文（普通话）语音后重试。'
             : '语音列表暂未就绪；可点击尝试。若无声音，请安装中文语音或更换浏览器。');
     }
@@ -1097,6 +1124,13 @@ function resetDictionaryBrowse() {
     renderDict();
 }
 
+function clearSearch() {
+    const input = document.getElementById('searchInput');
+    input.value = '';
+    resetDictionaryBrowse();
+    input.focus();
+}
+
 function showMoreDictionaryWords() {
     const start = dictionaryBrowseLimit;
     dictionaryBrowseLimit = Math.min(start + DICTIONARY_BATCH_SIZE, DICTIONARY_BROWSE_CAP, db.length);
@@ -1142,6 +1176,9 @@ function matchedRange(text, query) {
     return null;
 }
 
+// Simple line icon used on every pronunciation button.
+const SPEAKER_ICON = '<svg class="speak-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
 function renderDict(start = 0) {
     const query = document.getElementById('searchInput').value.trim();
     const result = query ? searchDictionary(query)
@@ -1150,13 +1187,12 @@ function renderDict(start = 0) {
     const html = result.map(() => `
         <div class="dict-item">
             <div>
-                <div class="dict-lao"></div>
+                <div class="dict-head"><span class="dict-lao"></span><span class="dict-category"></span></div>
                 <div class="dict-meanings"></div>
             </div>
             <div class="dict-actions">
-                <div class="dict-category"></div>
-                <button class="speak-btn lao-speak-btn" type="button" aria-label="朗读老挝语">🔊 老挝语</button>
-                <button class="speak-btn zh-speak-btn" type="button" aria-label="朗读中文意思">🔊 中文</button>
+                <button class="speak-btn lao-speak-btn" type="button" aria-label="朗读老挝语">${SPEAKER_ICON}<span>老挝语</span></button>
+                <button class="speak-btn zh-speak-btn" type="button" aria-label="朗读中文意思">${SPEAKER_ICON}<span>中文</span></button>
             </div>
         </div>
     `).join('');
@@ -1173,7 +1209,9 @@ function renderDict(start = 0) {
         const row = button.closest('.dict-item');
         row.querySelector('.dict-lao').textContent = word.lao;
         row.querySelector('.lao-speak-btn').addEventListener('click', () => speakLao(word.lao));
-        row.querySelector('.dict-category').textContent = word.cat;
+        const category = row.querySelector('.dict-category');
+        category.textContent = word.cat;
+        category.classList.add(word.cat === '工作' ? 'cat-work' : 'cat-life');
         const meanings = row.querySelector('.dict-meanings');
         const pronunciations = word.py.split('；');
         // One line per meaning: the Chinese text followed by its pinyin.
@@ -1210,6 +1248,10 @@ function renderDict(start = 0) {
     const browseTotal = Math.min(DICTIONARY_BROWSE_CAP, db.length);
     const shown = Math.min(dictionaryBrowseLimit, browseTotal);
     const allShown = shown === db.length;
+    document.getElementById('searchClear').hidden = !query;
+    const resultCount = document.getElementById('dictResultCount');
+    resultCount.hidden = !query;
+    resultCount.textContent = query ? (result.length ? `找到 ${result.length} 条` : '') : '';
     document.getElementById('dictMore').hidden = Boolean(query) || !db.length;
     document.getElementById('dictMoreButton').hidden = shown === browseTotal;
     document.getElementById('dictCount').textContent = allShown
