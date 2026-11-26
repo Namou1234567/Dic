@@ -965,11 +965,19 @@ let dictionaryBrowseLimit = DICTIONARY_INITIAL_COUNT;
 function dictionaryBrowseOrder() {
     const work = db.filter(word => word.cat === '工作');
     const life = db.filter(word => word.cat === '生活');
+    const openingCount = Math.min(500, db.length);
+    const openingWork = Math.min(work.length, Math.max(
+        openingCount - life.length, Math.round(openingCount * 0.42)
+    ));
+    const laterWorkRatio = (work.length - openingWork) / (db.length - openingCount || 1);
     let workIndex = 0;
     let lifeIndex = 0;
     return Array.from(db, (_, index) => {
-        // Match the overall category ratio without reordering either category.
-        const workTarget = Math.round((index + 1) * work.length / db.length);
+        const position = index + 1;
+        // Give life vocabulary a little more space near the start.
+        const workTarget = position <= openingCount
+            ? Math.round(position * openingWork / openingCount)
+            : openingWork + Math.round((position - openingCount) * laterWorkRatio);
         return workIndex < workTarget ? work[workIndex++] : life[lifeIndex++];
     });
 }
