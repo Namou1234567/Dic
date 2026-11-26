@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.5 · 2026-11-26
+
+- Stop the page from zooming in when a button is tapped twice quickly on phones (for example 记住了 on flashcards). Pinch zoom still works, and taps respond without the double-tap delay.
+- In shuffled flashcard practice, show the counter as 「随机 N/M」 in amber with the label 「随机练习 · 不影响顺序进度」, so it is not mistaken for ordered study progress being reset.
+
 ## 1.2.4 · 2026-11-26
 
 - Fix a briefly mirrored face while flipping flashcards on phones. The flip now uses a symmetric timing curve, so the card reaches 90° exactly when the front and back faces swap.
