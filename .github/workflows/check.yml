@@ -22,7 +22,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           node tests/vocabulary.cjs
-      - name: Check desktop and mobile pronunciation
+      - name: Check desktop and mobile pronunciation and the update banner
         run: |
           npm install --no-save --package-lock=false playwright@1.65.1
           npx playwright install --with-deps chromium webkit
@@ -33,3 +33,4 @@ jobs:
           done
           node tests/study-audio.cjs
           node tests/mobile-audio.cjs
+          node tests/update-banner.cjs

@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>小词典 · 南欧江水电站学习好帮手</title>
+    <!-- Home-screen name and icons -->
+    <meta name="apple-mobile-web-app-title" content="小词典">
+    <meta name="application-name" content="小词典">
+    <meta name="theme-color" content="#123b51">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+    <link rel="manifest" href="manifest.webmanifest">
     <script src="vendor/pinyin-pro-3.29.5.js"></script>
     <script src="vocabulary.js?v=1.2.0"></script>
     <script src="audio/manifest.js?v=1.2.0" defer></script>
@@ -127,6 +134,12 @@
             --line: #cadde1;
         }
         [hidden] { display: none !important; }
+        .update-banner {
+            position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+            z-index: 1200; max-width: calc(100% - 32px); min-height: 44px; padding: 10px 18px;
+            border: 0; border-radius: 999px; background: #f4b740; color: #2b1d00;
+            font-size: 15px; font-weight: 700; white-space: nowrap; box-shadow: 0 8px 22px rgba(18,59,81,.3); cursor: pointer;
+        }
         /* Disable double-tap zoom so quick repeated taps (for example on 记住了) do not zoom the page.
            Pinch zoom keeps working, and taps respond without the double-tap delay. */
         html { touch-action: manipulation; }
@@ -315,13 +328,14 @@
     </style>
 </head>
 <body>
+<button id="updateBanner" class="update-banner" type="button" onclick="applyUpdate()" hidden><span></span></button>
 
 <div id="speechNotice" class="speech-notice" role="alert" hidden></div>
 <div class="container">
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.2.6</span></h1>
+            <h1>小词典 <span class="dict-version">v1.2.7</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
@@ -1582,7 +1596,40 @@ window.onload = () => {
     initChineseSpeech();
     renderDict();
     updateAdminStats();
+    checkForUpdate();
 };
+
+// Home-screen web apps have no reload button and can reopen a cached page. Check the published
+// version when the page opens or comes back to the foreground, and offer a one-tap update.
+const CURRENT_VERSION = document.querySelector('.dict-version').textContent.trim();
+const UPDATE_CHECK_INTERVAL_MS = 60000;
+let lastUpdateCheck = 0;
+
+async function checkForUpdate() {
+    if (Date.now() - lastUpdateCheck < UPDATE_CHECK_INTERVAL_MS || navigator.onLine === false) return;
+    lastUpdateCheck = Date.now();
+    try {
+        const response = await fetch('index.html?check=' + Date.now(), { cache: 'no-store' });
+        if (!response.ok) return;
+        const latest = (await response.text()).match(/class="dict-version">(v[\d.]+)</)?.[1];
+        if (!latest || latest === CURRENT_VERSION) return;
+        const banner = document.getElementById('updateBanner');
+        banner.dataset.version = latest;
+        banner.querySelector('span').textContent = `有新版本 ${latest}，点此更新`;
+        banner.hidden = false;
+    } catch {} // Offline or blocked: keep using the current version.
+}
+
+// Load the new page under a new address so no cached copy of the old page is used.
+// Study progress and the review list are stored per site and are kept.
+function applyUpdate() {
+    const version = document.getElementById('updateBanner').dataset.version || String(Date.now());
+    location.replace(location.pathname + '?v=' + encodeURIComponent(version));
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkForUpdate();
+});
 </script>
 </body>
 </html>
