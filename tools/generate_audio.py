@@ -9,7 +9,8 @@ Entries without a clip are synthesized and appended to newly numbered bank
 files, so existing banks stay unchanged. When the voice recorded in a manifest
 header differs from the configured voice, every clip of that language is
 rebuilt into new bank files (new file names, so phones never mix a cached old
-bank with new timings) and the old banks are deleted.
+bank with new timings). Clips for text no longer in the vocabulary are dropped,
+and bank files that no clip uses are deleted.
 
 Run from the repository root:
 
@@ -155,7 +156,6 @@ def bundle(lang, files, clips, next_bank):
     config = LANGUAGES[lang]
     gap = np.zeros(int(round(config['gap'] * SAMPLE_RATE)), dtype=np.int16)
     items = list(files.items())
-    written = []
     for offset in range(0, len(items), BANK_SIZE):
         src = config['bank'].format(next_bank)
         parts, position = [], 0
@@ -173,10 +173,8 @@ def bundle(lang, files, clips, next_bank):
             ['ffmpeg', '-v', 'error', '-y', '-f', 's16le', '-ar', str(SAMPLE_RATE), '-ac', '1',
              '-i', '-', '-c:a', 'libmp3lame', '-b:a', config['bitrate'], src],
             input=np.concatenate(parts).tobytes(), check=True)
-        written.append(src)
         next_bank += 1
-    print(f'{lang}: wrote {len(written)} bank(s)', flush=True)
-    return written
+    print(f'{lang}: wrote banks up to {src}', flush=True)
 
 
 def main():
@@ -192,17 +190,26 @@ def main():
             print(f'{lang}: voice changed, rebuilding all {len(words[key])} clips', flush=True)
             clips = {}
         missing = [t for t in words[key] if t not in clips]
-        print(f'{lang}: {len(missing)} entries need audio', flush=True)
         if not missing and not rebuild:
             continue
+        print(f'{lang}: {len(missing)} entries need audio', flush=True)
         with tempfile.TemporaryDirectory() as tmp:
             files = asyncio.run(synthesize(lang, missing, Path(tmp)))
-            written = bundle(lang, files, clips, next_bank)
-        if rebuild:
-            for path in existing:
-                if path.as_posix() not in written:
-                    path.unlink()
+            bundle(lang, files, clips, next_bank)
         write_manifest(lang, clips)
+
+    # Drop clips for text that is no longer in the vocabulary and delete banks nobody uses.
+    for lang, key in (('zh', 'zh'), ('lao', 'lao')):
+        config = LANGUAGES[lang]
+        text, clips = read_manifest(lang)
+        current = {t: clips[t] for t in words[key] if t in clips}
+        if len(current) != len(clips):
+            print(f'{lang}: removing {len(clips) - len(current)} unused clips', flush=True)
+            write_manifest(lang, current)
+        used = {clip['src'] for clip in current.values()}
+        for path in Path('.').glob(config['glob']):
+            if path.as_posix() not in used:
+                path.unlink()
     return 0
 
 

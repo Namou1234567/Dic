@@ -12,9 +12,9 @@
     <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
     <link rel="manifest" href="manifest.webmanifest">
     <script src="vendor/pinyin-pro-3.29.5.js"></script>
-    <script src="vocabulary.js?v=1.3.0"></script>
-    <script src="audio/manifest.js?v=1.3.0" defer></script>
-    <script src="audio/lao/manifest.js?v=1.3.0" defer></script>
+    <script src="vocabulary.js?v=1.3.0-2"></script>
+    <script src="audio/manifest.js?v=1.3.0-2" defer></script>
+    <script src="audio/lao/manifest.js?v=1.3.0-2" defer></script>
     <style>
         @font-face {
             font-family: "Phetsarath OT";
@@ -276,12 +276,7 @@
             .container { padding-top: 10px; }
             #page-study .study-header small { display: none; }
         }
-        select.meaning-picker { width: auto; max-width: 100%; min-height: 36px; margin: 0; padding: 4px 6px; color: var(--text-main); font-size: 14px; }
-        .dict-actions .meaning-picker { flex-basis: 100%; min-width: 0; }
         .dict-actions { max-width: 50%; }
-        #page-study .multiple-meanings .card-back { padding-top: 28px; padding-bottom: 12px; }
-        #page-study .multiple-meanings .card-back .word-lao-sub,
-        #page-study .multiple-meanings .card-back .hint-text { display: none; }
         /* Search stays at the top while scrolling the dictionary. The negative offset lets the title
            row (12px padding + 24px line) slide above the screen so only the input box stays visible. */
         .dict-search { position: sticky; top: -36px; z-index: 20; box-shadow: 0 6px 14px rgba(18,55,70,.08); }
@@ -386,8 +381,7 @@
                     <div id="cardCatTag" class="cat-badge">分类</div>
                     <div id="cardLaoBack" class="word-lao-sub">ສະບາຍດີ</div>
                     <ruby id="cardZhPy" class="word-zh">你好<rt>nǐ hǎo</rt></ruby>
-                    <select id="cardMeaning" class="meaning-picker" aria-label="选择要朗读的中文译义" onclick="event.stopPropagation()" hidden></select>
-                    <button id="cardSpeak" class="speak-btn" type="button" onclick="event.stopPropagation(); speakChinese(document.getElementById('cardMeaning').value)" aria-label="朗读当前词语的中文意思"><svg class="speak-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>中文</span></button>
+                    <button id="cardSpeak" class="speak-btn" type="button" onclick="event.stopPropagation(); speakChinese(speechText(currentList[currentIndex]))" aria-label="朗读当前词语的中文意思"><svg class="speak-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>中文</span></button>
                     <div class="hint-text">如果没记住，请点击“不认识”</div>
                 </div>
             </div>
@@ -750,7 +744,7 @@ function speakChinese(text) {
         return;
     }
     if (!speechSupported || (availableVoices.length && !chineseVoice)) return;
-    const utterance = new window.SpeechSynthesisUtterance(text.trim());
+    const utterance = new window.SpeechSynthesisUtterance(text.trim().replace(/\s*\/\s*/g, '，'));
     utterance.lang = 'zh-CN';
     if (chineseVoice) utterance.voice = chineseVoice;
     utterance.rate = 0.9;
@@ -1281,9 +1275,6 @@ function renderDict(start = 0) {
     fragment.innerHTML = html || '<div style="text-align:center; padding:30px; color:var(--text-sub);">未找到相关词汇</div>';
     // Use entry data directly in the event handler so quotes and other characters remain literal.
     fragment.content.querySelectorAll('.zh-speak-btn').forEach((button, index) => {
-        const picker = document.createElement('select');
-        picker.className = 'meaning-picker';
-        picker.setAttribute('aria-label', '选择要朗读的中文译义');
         const { word, matchedIndices } = result[index];
         const row = button.closest('.dict-item');
         row.querySelector('.dict-lao').textContent = word.lao;
@@ -1293,12 +1284,13 @@ function renderDict(start = 0) {
         category.classList.add(word.cat === '工作' ? 'cat-work' : 'cat-life');
         const meanings = row.querySelector('.dict-meanings');
         const pronunciations = word.py.split('；');
-        // One line per meaning: the Chinese text followed by its pinyin.
+        // All meanings on one line, separated by slashes, followed by the pinyin.
+        const line = document.createElement('div');
+        line.className = 'dict-meaning';
+        const label = document.createElement('span');
+        label.className = 'dict-zh';
         word.meanings.forEach((text, meaningIndex) => {
-            const line = document.createElement('div');
-            line.className = 'dict-meaning';
-            const label = document.createElement('span');
-            label.className = 'dict-zh';
+            if (meaningIndex) label.append('/');
             if (matchedIndices.includes(meaningIndex)) {
                 // Highlight only the matched characters; fall back to the whole meaning.
                 const chars = Array.from(text);
@@ -1308,18 +1300,15 @@ function renderDict(start = 0) {
                 mark.textContent = chars.slice(from, to).join('');
                 label.append(chars.slice(0, from).join(''), mark, chars.slice(to).join(''));
             } else {
-                label.textContent = text;
+                label.append(text);
             }
-            const pinyin = document.createElement('span');
-            pinyin.className = 'dict-py';
-            pinyin.textContent = pronunciations[meaningIndex] || '';
-            line.append(label, ' ', pinyin);
-            meanings.appendChild(line);
         });
-        fillMeanings(picker, word);
-        picker.selectedIndex = matchedIndices[0] ?? 0;
-        if (!picker.hidden) button.before(picker);
-        button.addEventListener('click', () => speakChinese(picker.value));
+        const pinyin = document.createElement('span');
+        pinyin.className = 'dict-py';
+        pinyin.textContent = pronunciations.join(' / ');
+        line.append(label, ' ', pinyin);
+        meanings.appendChild(line);
+        button.addEventListener('click', () => speakChinese(speechText(word)));
     });
     if (start && !query) dictContent.append(fragment.content);
     else dictContent.replaceChildren(fragment.content);
@@ -1391,16 +1380,9 @@ function findStudyPosition(list, saved) {
         ? previousIndex : 0;
 }
 
-function fillMeanings(picker, word) {
-    picker.textContent = '';
-    const meanings = word?.meanings || [];
-    for (const text of meanings) {
-        const option = document.createElement('option');
-        option.value = text;
-        option.textContent = text;
-        picker.appendChild(option);
-    }
-    picker.hidden = meanings.length < 2;
+// Read all meanings together; the recordings pause at each slash.
+function speechText(word) {
+    return word ? word.meanings.join('/') : '';
 }
 
 function setCardFlipped(card, flipped, animate = false) {
@@ -1419,8 +1401,6 @@ function renderCardMeaning(meaning, pinyin) {
 
 function updateCardUI() {
     const wordForSpeech = currentList[currentIndex];
-    fillMeanings(document.getElementById('cardMeaning'), wordForSpeech);
-    document.getElementById('mainCard').classList.toggle('multiple-meanings', (wordForSpeech?.meanings.length || 0) > 1);
     stopChineseSpeech();
     document.getElementById('cardSpeak').disabled = currentList.length === 0;
     document.getElementById('cardLaoSpeak').disabled = currentList.length === 0;
@@ -1448,7 +1428,7 @@ function updateCardUI() {
     
     // Back face with the headword and translation.
     document.getElementById('cardLaoBack').innerText = word.lao;
-    renderCardMeaning(word.zh, word.py);
+    renderCardMeaning(speechText(word), word.py.split('；').join(' / '));
     document.getElementById('cardCatTag').innerText = word.cat;
     document.getElementById('cardCatTag').style.display = 'block';
 
