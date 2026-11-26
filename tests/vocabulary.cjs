@@ -81,7 +81,8 @@ for (const [text, reading] of [
 }
 
 const lao = words.map(word => word.lao);
-const zh = [...new Set(words.flatMap(word => word.meanings))];
+// Each headword has one Mandarin recording that reads all meanings with a pause at each slash.
+const zh = [...new Set(words.map(word => word.meanings.join('/')))];
 if (process.argv[2] === '--export') {
     process.stdout.write(JSON.stringify({ lao, zh }, null, 2) + '\n');
 } else {
@@ -108,5 +109,5 @@ if (process.argv[2] === '--export') {
         ], { encoding: 'utf8' }));
         assert(duration + 0.05 >= end, 'Clip extends beyond ' + path);
     }
-    console.log(`Verified ${lao.length} Lao headwords, ${zh.length} Chinese meanings and ${limits.size} audio files.`);
+    console.log(`Verified ${lao.length} Lao headwords, ${zh.length} Chinese recordings and ${limits.size} audio files.`);
 }

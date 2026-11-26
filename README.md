@@ -19,7 +19,7 @@ Study progress and missed words are saved only in the user's own browser.
 
 ## Updating the vocabulary
 
-1. Edit `vocabulary.js`. Each entry has a Lao headword (`lao`), Chinese meaning (`zh`), and category (`cat`: `工作` or `生活`). Separate several Chinese meanings with `；`.
+1. Edit `vocabulary.js`. Each entry has a Lao headword (`lao`), Chinese meaning (`zh`), and category (`cat`: `工作` or `生活`). Separate several Chinese meanings with `/`. The recording reads them together with a short pause at each slash.
 2. Push the change to a branch other than `main`. The **Generate missing audio** workflow records the new entries and commits the audio to the branch. Push one more commit (an empty one is fine) so **Dictionary checks** runs on the result.
 3. Raise the version number in `index.html` (`dict-version`) and the `?v=` values on its `<script>` tags, so phones load the new files and show the update banner.
 4. Open a pull request, wait for **Dictionary checks**, and merge.

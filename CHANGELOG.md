@@ -3,6 +3,7 @@
 ## 1.3.0 · 2026-11-27
 
 - Mandarin recordings now use the Microsoft female voice Xiaoxiao at a slightly slower rate, so every word starts clearly. Lao recordings are unchanged.
+- Words with several Chinese meanings show them on one line separated by slashes, for example 洗手间/厕所, with the pinyin in the same form. The Chinese button reads all meanings in one go with a short pause at each slash, so there is no longer a list to choose from. Repeated meanings such as 矮/低 and 低 are merged.
 
 ## 1.2 · 2026-11-26 to 2026-11-27
 
