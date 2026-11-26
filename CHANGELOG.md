@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.3 · 2026-11-26
+
+- Keep the search box at the top of the screen while scrolling the dictionary; the title row slides away so only the input stays visible.
+- Add a clear (×) button to the search box and show the number of results while searching.
+- Use a line speaker icon on all pronunciation buttons in place of the 🔊 emoji, and give the two buttons in each dictionary entry the same width.
+- Show the category next to the Lao headword as a small colored label (work in blue, everyday life in green) instead of beside the buttons.
+- Enlarge dictionary entry text (Lao 23 px, Chinese 18 px, pinyin 15 px) and align it to the top of the entry.
+
 ## 1.2.2 · 2026-11-26
 
 - In dictionary results, show pinyin after the Chinese text instead of above it, so Lao descenders no longer overlap the pinyin and characters are no longer spaced out. Entries with several meanings show each meaning on its own line. Flashcards are unchanged.
