@@ -203,6 +203,10 @@
         #page-study .study-header small { margin-top: 4px; font-size: 12px; }
         #page-study .progress-track { margin-bottom: 0; height: 6px; }
         .study-progress-label { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 12px; color: var(--text-sub); }
+        #progressText { color: var(--primary); }
+        /* Shuffled practice uses amber so it is not mistaken for ordered progress. */
+        .study-top-panel.is-random #progressBar { background: linear-gradient(90deg, #b8720f, #e0a23a); }
+        .study-top-panel.is-random #progressText, .study-top-panel.is-random #progressLabel { color: #a1620a; }
         #page-study .cat-scroll { gap: 5px; padding-bottom: 5px; }
         #page-study .cat-btn { padding: 5px 9px; }
         @media (max-width: 420px) {
@@ -344,8 +348,8 @@
             </div>
             <div class="progress-track"><div id="progressBar"></div></div>
             <div class="study-progress-label">
-                <span>当前进度</span>
-                <strong id="progressText" style="color:var(--primary);">0/0</strong>
+                <span id="progressLabel">当前进度</span>
+                <strong id="progressText">0/0</strong>
             </div>
         </div>
 
@@ -1363,8 +1367,9 @@ function updateCardUI() {
         document.getElementById('cardLaoBack').innerText = "空空如也";
         renderCardMeaning("该分类下没有词汇", "请添加或切换分类");
         document.getElementById('cardCatTag').style.display = 'none';
-        document.getElementById('progressText').innerText = "0/0";
+        document.getElementById('progressText').innerText = randomStudy ? '随机 0/0' : '0/0';
         document.getElementById('progressBar').style.width = "0%";
+        updateProgressMode();
         return;
     }
 
@@ -1383,13 +1388,20 @@ function updateCardUI() {
     // Progress bar.
     const currentNum = currentIndex + 1;
     const totalNum = currentList.length;
-    document.getElementById('progressText').innerText = `${currentNum}/${totalNum}`;
+    document.getElementById('progressText').innerText = `${randomStudy ? '随机 ' : ''}${currentNum}/${totalNum}`;
+    updateProgressMode();
     document.getElementById('progressBar').style.width = `${(currentNum / totalNum) * 100}%`;
 
     // Keep randomized practice separate from ordered study progress.
     if (randomStudy) return;
     memory[currentCat] = { lao: laoKey(word.lao), index: currentIndex };
     localStorage.setItem('lao_memory_v11', JSON.stringify(memory));
+}
+
+// Mark shuffled practice so its counter is not read as ordered study progress.
+function updateProgressMode() {
+    document.querySelector('.study-top-panel').classList.toggle('is-random', randomStudy);
+    document.getElementById('progressLabel').textContent = randomStudy ? '随机练习 · 不影响顺序进度' : '当前进度';
 }
 
 function sameVocabularyEntry(a, b) {
