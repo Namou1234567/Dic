@@ -16,14 +16,21 @@ async function check(browserType, device) {
                 return result;
             };
         });
+        const requests = new Map();
+        await page.route('**/*.mp3', async route => {
+            const url = route.request().url();
+            requests.set(url, (requests.get(url) || 0) + 1);
+            await route.continue();
+        });
         await page.goto(process.env.NAMOU_TEST_URL || 'http://127.0.0.1:8765/');
         await page.getByRole('textbox', { name: /搜索/ }).fill('整流器');
         const row = page.locator('.dict-item').filter({ hasText: '整流器' });
         assert.equal(await row.count(), 1);
-        for (const [name, key, manifest] of [
+        const pronunciations = [
             ['朗读中文意思', '整流器', 'NAMOU_VOICE_CLIPS'],
             ['朗读老挝语', 'ຕົວແປງໄຟຟ້າກະແສສະຫຼັບເປັນກະແສກົງ', 'NAMOU_LAO_CLIPS']
-        ]) {
+        ];
+        for (const [name, key, manifest] of [...pronunciations, ...pronunciations]) {
             const clip = await page.evaluate(([name, term]) => window[name][term], [manifest,key]);
             const previous = await page.evaluate(() => window.namouAudioStarts.length);
             await row.getByRole('button', { name }).tap();
@@ -31,7 +38,8 @@ async function check(browserType, device) {
             const start = await page.evaluate(() => window.namouAudioStarts.at(-1));
             assert.deepEqual(start, {offset: clip.start, duration: clip.end - clip.start, state: 'running'});
         }
-        console.log(`Verified both pronunciation clips on ${device} (${browserType.name()}).`);
+        assert.deepEqual([...requests.values()], [1, 1]);
+        console.log(`Verified both pronunciation clips and cache reuse on ${device} (${browserType.name()}).`);
     } finally {
         await browser.close();
     }

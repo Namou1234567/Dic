@@ -5,23 +5,40 @@ const vm = require('node:vm');
 
 const page = fs.readFileSync('index.html', 'utf8');
 const start = page.indexOf('const initialDB =');
-const end = page.indexOf('let db = restoreVocabulary', start);
-assert(start >= 0 && end > start, 'Cannot find the vocabulary and merge logic');
-const scope = { pinyinPro: { pinyin: text => text }, window: {} };
+const end = page.indexOf('let memory =', start);
+assert(start >= 0 && end > start, '找不到词库和存储逻辑');
+const saved = new Map(Object.entries({
+    lao_db_v11: JSON.stringify([
+        { lao: 'ລະດັບນ້ຳ', meanings: ['水平仪', '水平尺', '水位'], cat: '生活' },
+        { lao: 'ເງິນ', meanings: ['钱', '银/钱', '个人注释'], cat: '生活' },
+        { lao: '个人词测试', zh: '保留', cat: '工作' }
+    ]),
+    lao_wrong_v11: JSON.stringify([
+        { lao: ' ລະດັບນ້ຳ ' }, { lao: '个人词测试' }, { lao: '个人词测试' }, { lao: '已删除词' }
+    ])
+}));
+const scope = {
+    pinyinPro: { pinyin: text => text },
+    window: {},
+    localStorage: {
+        getItem: key => saved.get(key) ?? null,
+        setItem: (key, value) => saved.set(key, value),
+        removeItem: key => saved.delete(key)
+    }
+};
 vm.createContext(scope);
 vm.runInContext(fs.readFileSync('vocabulary.js', 'utf8'), scope);
-vm.runInContext(page.slice(start, end) + '\nwords = mergeVocabulary(initialDB);', scope);
-vm.runInContext(`
-    migrated = restoreVocabulary([
-        { lao: 'ລະດັບນ້ຳ', meanings: ['水平仪', '水平尺', '水位'], cat: '工作' },
-        { lao: 'ເງິນ', meanings: ['钱', '银/钱'], cat: '生活' },
-        { lao: '个人词测试', zh: '保留', cat: '生活' }
-    ]);
-`, scope);
+vm.runInContext(page.slice(start, end) + '\nwords = mergeVocabulary(initialDB); migrated = db;', scope);
 assert.equal(scope.migrated.length, scope.words.length + 1);
 assert.equal(scope.migrated.find(word => word.lao === 'ລະດັບນ້ຳ').zh, '水位');
-assert.equal(scope.migrated.find(word => word.lao === 'ເງິນ').zh, '钱');
-assert(scope.migrated.some(word => word.lao === '个人词测试'));
+assert.equal(scope.migrated.find(word => word.lao === 'ລະດັບນ້ຳ').cat, '工作');
+assert.equal(scope.migrated.find(word => word.lao === 'ເງິນ').zh, '钱；个人注释');
+assert.deepEqual(JSON.parse(saved.get('lao_custom_v12')), [
+    { lao: 'ເງິນ', meanings: ['个人注释'], cat: '生活' },
+    { lao: '个人词测试', meanings: ['保留'], cat: '工作' }
+]);
+assert.deepEqual(JSON.parse(saved.get('lao_wrong_v12')), ['ລະດັບນ້ຳ', '个人词测试']);
+assert(!saved.has('lao_db_v11') && !saved.has('lao_wrong_v11'));
 const words = scope.words;
 assert.equal(scope.window.NAMOU_VOCABULARY.length, words.length, 'Duplicate headword in source vocabulary');
 assert(words.length > 0, 'Missing vocabulary');
