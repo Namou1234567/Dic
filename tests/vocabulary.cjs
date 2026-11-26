@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const page = fs.readFileSync('index.html', 'utf8');
 const start = page.indexOf('const initialDB =');
 const end = page.indexOf('let currentCat =', start);
-assert(start >= 0 && end > start, '找不到词库和存储逻辑');
+assert(start >= 0 && end > start, 'Could not find the vocabulary and storage logic');
 const saved = new Map(Object.entries({
     lao_db_v11: JSON.stringify([
         { lao: 'ລະດັບນ້ຳ', meanings: ['水平仪', '水平尺', '水位'], cat: '生活' },

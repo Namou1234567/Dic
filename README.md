@@ -1,35 +1,37 @@
-# 小词典
+# Xiao Cidian (小词典)
 
-南欧江水电站学习好帮手。支持用老挝语、中文和拼音查词，并提供双语朗读、工作与生活分类背诵及错题本。
+A Lao–Chinese learning aid for the Nam Ou hydropower station. Search in Lao, Chinese, or pinyin, listen to bilingual recordings, and study flashcards by work or everyday-life category. The review list keeps track of missed words.
 
-[打开线上小词典](https://namou1234567.github.io/Dic/)
+[Open the online dictionary](https://namou1234567.github.io/Dic/)
 
-网站由 GitHub Pages 发布。词库和公共词条音频随网站发布，学习进度和错题保存在当前浏览器。
+The site is published through GitHub Pages. The vocabulary and public recordings ship with the site. Study progress and missed words are saved in the current browser.
 
-## 维护和发布
+## Maintenance and publishing
 
-1. 在 `vocabulary.js` 中维护词条。多个独立中文译义用全角分号「；」分隔。每条包含老挝语 `lao`、中文译义 `zh` 和分类 `cat`。分类使用「工作」或「生活」。已有老挝语词条的新增译义沿用原拼写，网页会合并译义。
-2. 新增或改动老挝语拼写、中文译义时，按[音频维护说明](audio/README.md)同步音频文件与对应表。仅调整分类时无须重新生成音频。
-3. 在仓库根目录运行 `node tests/vocabulary.cjs`。需要 Node.js 和 FFmpeg（含 `ffprobe`）。
-4. 用 `python3 -m http.server 8765` 在本机预览。检查搜索、分类和朗读。可另开终端运行以下命令复测翻卡朗读。
+1. Edit entries in `vocabulary.js`. Separate distinct Chinese meanings with a full-width semicolon (`；`). Each entry contains the Lao headword (`lao`), Chinese meaning (`zh`), and category (`cat`). Use `工作` (work) or `生活` (everyday life) as the category value. When adding a meaning to an existing headword, keep its original spelling so the site can combine the meanings.
+2. When adding or changing Lao spellings or Chinese meanings, update the audio files and manifests together using the [audio maintenance guide](audio/README.md). A category-only change does not require new recordings.
+3. After changing `vocabulary.js` or files under `audio/`, update the `?v=` cache version on the corresponding `<script>` URLs in `index.html`. Mobile browsers may otherwise keep using an older cached version.
+4. From the repository root, run `node tests/vocabulary.cjs`. This requires Node.js and FFmpeg, including `ffprobe`.
+5. Preview locally with `python3 -m http.server 8765` and check search, categories, and pronunciation. In another terminal, run the playback checks below. Install both Chromium and WebKit with `npx playwright install chromium webkit` before running the mobile playback test.
 
    ```sh
    npm install --no-save --package-lock=false playwright@1.65.1
-   npx playwright install chromium
+   npx playwright install chromium webkit
    node tests/study-audio.cjs
+   node tests/mobile-audio.cjs
    ```
 
-5. 在 GitHub 提交审阅请求。查看 **Dictionary checks** 的结果，合并后核对线上页面。
+6. Open a pull request on GitHub. Check **Dictionary checks**, then verify the live site after merging.
 
-## 文件位置
+## File locations
 
-| 内容 | 位置 |
+| Contents | Location |
 |---|---|
-| 页面、搜索、背诵和播放 | `index.html` |
-| 公开词库 | `vocabulary.js` |
-| 中老双语音频和词条对应表 | `audio/` |
-| 老挝语字体及许可 | `fonts/` |
-| 拼音库及许可 | `vendor/` |
-| 自动检查 | `tests/`、`.github/workflows/check.yml` |
+| Pages, search, flashcards, and playback | `index.html` |
+| Public vocabulary | `vocabulary.js` |
+| Mandarin and Lao audio and clip manifests | `audio/` |
+| Lao fonts and license | `fonts/` |
+| Pinyin library and license | `vendor/` |
+| Automated checks | `tests/`, `.github/workflows/check.yml` |
 
-[查看版本记录](CHANGELOG.md)
+[View the changelog](CHANGELOG.md)

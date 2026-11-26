@@ -1,20 +1,20 @@
-# 双语词库配音
+# Bilingual vocabulary audio
 
-当前公开词库需要 1,938 段老挝语和 1,950 段普通话。音频按语言分组打包为 MP3。网页按需加载音频，根据词条对应表播放指定片段。
+The current public vocabulary requires 1,938 Lao clips and 1,950 Mandarin clips. Clips are grouped by language into MP3 files. The site loads audio on demand and uses the clip manifests to play the requested segment.
 
-| 语言 | 声音和生成方式 | 文件 |
+| Language | Voice and generation method | Files |
 |---|---|---|
-| 普通话 | Kokoro-82M-v1.1-zh，女声 `zf_001`，语速 0.95，本地合成 | `mandarin-*.mp3`、`manifest.js` |
-| 老挝语 | 微软老挝语男声 `lo-LA-ChanthavongNeural`，通过 `edge-tts` 在线合成后打包 | `lao/chanthavong-*.mp3`、`lao/manifest.js` |
+| Mandarin | Kokoro-82M-v1.1-zh, female voice `zf_001`, speed 0.95, synthesized locally | `mandarin-*.mp3`, `manifest.js` |
+| Lao | Microsoft Lao male voice `lo-LA-ChanthavongNeural`, synthesized online with `edge-tts` and then bundled | `lao/chanthavong-*.mp3`, `lao/manifest.js` |
 
-[Kokoro 模型](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) · [Kokoro 模型许可](MODEL-LICENSE.txt) · [edge-tts 项目](https://github.com/rany2/edge-tts)
+[Kokoro model](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) · [Kokoro model license](MODEL-LICENSE.txt) · [edge-tts project](https://github.com/rany2/edge-tts)
 
-## 新增词条或重新制作音频
+## Adding entries or regenerating audio
 
-1. 从仓库根目录运行 `node tests/vocabulary.cjs --export > /tmp/namou-words.json`，得到去重后的 `zh` 和 `lao` 文本数组。对应表的键使用导出的原文，保留原来的拼写、标点和译义。
-2. 普通话使用 Kokoro 的中文管线（`lang_code='z'`）逐条合成。对送入语音模型的文本，把斜线改为停顿，去掉括号里的补充说明，句末加句号。老挝语逐条合成，例如 `edge-tts --voice lo-LA-ChanthavongNeural --text 'ສະບາຍດີ' --write-media hello.mp3`。此步骤需要生成环境访问相应的模型或服务。
-3. 用 FFmpeg 将片段解码为 24 kHz 单声道，按每组最多 50 段拼接。普通话片段间留 0.7 秒静音，按 48 kbps 编码 MP3。老挝语留 0.6 秒，按 40 kbps 编码。新增少量词时可放入新编号的音频文件，避免重做已有整组。
-4. 根据拼接时的采样位置计算每段起止秒数，边界排除段间静音。普通话文件赋值给 `window.NAMOU_VOICE_CLIPS`，老挝语赋值给 `window.NAMOU_LAO_CLIPS`。每条记录形如 `{"src":"audio/mandarin-01.mp3","start":0,"end":1.15}`。路径相对于网页根目录。
-5. 音频和对应表放在同一个变更里。运行 `node tests/vocabulary.cjs`，并从搜索和背诵分别抽听新词、首尾片段及多译义词条。自动检查能验证覆盖和时间范围，音频读音需抽听。
+1. From the repository root, run `node tests/vocabulary.cjs --export > /tmp/namou-words.json` to export deduplicated `zh` and `lao` text arrays. Use the exported text verbatim as manifest keys, preserving spelling, punctuation, and meanings.
+2. Synthesize each Mandarin entry with the Kokoro Chinese pipeline (`lang_code='z'`). In the synthesis input, turn slashes into pauses, remove parenthetical notes, and add a period at the end. Synthesize Lao entries individually, for example with `edge-tts --voice lo-LA-ChanthavongNeural --text 'ສະບາຍດີ' --write-media hello.mp3`. The generation environment needs access to the relevant model or service.
+3. Use FFmpeg to decode clips to 24 kHz mono, then concatenate at most 50 clips per bank. Leave 0.7 seconds of silence between Mandarin clips and encode the MP3 at 48 kbps. For Lao, leave 0.6 seconds and encode at 40 kbps. Put small additions in a newly numbered file to avoid rebuilding a whole bank.
+4. Calculate the start and end times in seconds from the sample positions during concatenation. Exclude the silence between clips from each clip's boundaries. Assign the Mandarin manifest to `window.NAMOU_VOICE_CLIPS` and the Lao manifest to `window.NAMOU_LAO_CLIPS`. Each record looks like `{"src":"audio/mandarin-01.mp3","start":0,"end":1.15}`. Paths are relative to the site root.
+5. Submit the audio and manifests together. Run `node tests/vocabulary.cjs`, then listen to a sample of new entries, the first and last clips, and entries with multiple meanings from both search and flashcards. The automated check verifies coverage and time ranges. Listen to clips to verify pronunciation.
 
-个人新增的中文译义如果没有录音，网页会尝试浏览器系统中文语音。老挝语需要加入对应录音后才能播放。
+If a personal Chinese meaning has no recording, the site tries the browser's built-in Chinese voice. Lao playback requires a corresponding recording.
