@@ -321,7 +321,7 @@
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.2.5</span></h1>
+            <h1>小词典 <span class="dict-version">v1.2.6</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
@@ -449,6 +449,38 @@ let bufferedClip;
 const bufferedBanks = new Map();
 const pendingBufferedBanks = new Map();
 const BUFFERED_BANK_LIMIT = 4;
+const RESUME_TIMEOUT_MS = 2000;
+// Set when the shared audio context stops responding, so the next tap replaces it.
+let bufferedContextStalled = false;
+
+// Phones can suspend, interrupt or wedge the shared AudioContext (memory pressure, other audio,
+// switching apps). Replace it during the tap, while the browser still allows starting audio.
+// Decoded AudioBuffers are not tied to a context, so cached banks stay usable.
+function getBufferedContext(AudioContext) {
+    const context = bufferedAudioContext;
+    const unusable = !context || bufferedContextStalled
+        || context.state === 'closed' || context.state === 'interrupted'
+        || (context.state === 'suspended' && context.namouWasRunning);
+    if (!unusable) return context;
+    if (context) {
+        for (const request of pendingBufferedBanks.values()) request.controller.abort();
+        pendingBufferedBanks.clear();
+        if (context.state !== 'closed') context.close().catch(() => {});
+    }
+    const fresh = new AudioContext();
+    fresh.addEventListener('statechange', () => {
+        if (fresh.state === 'running') fresh.namouWasRunning = true;
+    });
+    bufferedAudioContext = fresh;
+    bufferedContextStalled = false;
+    return fresh;
+}
+
+// After returning from another app, check the context before the next tap.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && bufferedAudioContext
+        && bufferedAudioContext.state !== 'running') bufferedContextStalled = true;
+});
 
 function loadBufferedBank(url, context) {
     if (bufferedBanks.has(url)) {
@@ -493,7 +525,7 @@ function stopBufferedClip(nextUrl) {
     }
     if (playback.source) {
         playback.source.onended = null;
-        playback.source.stop();
+        try { playback.source.stop(); } catch {} // Older WebKit throws if already stopped.
     }
 }
 
@@ -506,11 +538,20 @@ async function playBufferedClip(text, clip, AudioContext) {
         showSpeechNotice('音频加载超时，请检查网络后重试。');
     }, 15000);
     try {
-        bufferedAudioContext = bufferedAudioContext || new AudioContext();
-        const context = bufferedAudioContext;
-        const resumed = context.resume();
-        await resumed;
+        // Create or replace the context and call resume() synchronously in the tap.
+        const context = getBufferedContext(AudioContext);
+        const resumed = context.resume().then(() => true, () => false);
+        const running = await Promise.race([
+            resumed, new Promise(resolve => setTimeout(() => resolve(false), RESUME_TIMEOUT_MS))
+        ]);
         if (bufferedClip !== playback) return;
+        if (!running || context.state !== 'running') {
+            bufferedContextStalled = true;
+            stopBufferedClip();
+            showSpeechNotice('声音暂时没有反应，请再点一次朗读按钮。');
+            return;
+        }
+        context.namouWasRunning = true;
         const buffer = await loadBufferedBank(clip.src, context);
         if (bufferedClip !== playback) return;
         const source = context.createBufferSource();

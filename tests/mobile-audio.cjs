@@ -15,6 +15,11 @@ async function check(browserType, device) {
                 });
                 return result;
             };
+            // Simulate a stalled audio context: resume() never settles while the flag is set.
+            const { resume } = AudioContext.prototype;
+            AudioContext.prototype.resume = function () {
+                return window.namouStallResume ? new Promise(() => {}) : resume.call(this);
+            };
         });
         const requests = new Map();
         await page.route('**/*.mp3', async route => {
@@ -39,7 +44,20 @@ async function check(browserType, device) {
             assert.deepEqual(start, {offset: clip.start, duration: clip.end - clip.start, state: 'running'});
         }
         assert.deepEqual([...requests.values()], [1, 1]);
-        console.log(`Verified both pronunciation clips and cache reuse on ${device} (${browserType.name()}).`);
+
+        // A stalled audio context shows a retry message, and the next tap recovers with a new
+        // context while reusing the cached recording.
+        const chinese = row.getByRole('button', { name: '朗读中文意思' });
+        const before = await page.evaluate(() => { window.namouStallResume = true; return window.namouAudioStarts.length; });
+        await chinese.tap();
+        await page.waitForFunction(() => !document.getElementById('speechNotice').hidden, null, {timeout: 6000});
+        assert.equal(await page.evaluate(() => window.namouAudioStarts.length), before);
+        await page.evaluate(() => { window.namouStallResume = false; });
+        await chinese.tap();
+        await page.waitForFunction(count => window.namouAudioStarts.length === count + 1, before, {timeout: 6000});
+        assert.equal((await page.evaluate(() => window.namouAudioStarts.at(-1))).state, 'running');
+        assert.deepEqual([...requests.values()], [1, 1]);
+        console.log(`Verified both pronunciation clips, cache reuse and stall recovery on ${device} (${browserType.name()}).`);
     } finally {
         await browser.close();
     }
