@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2 · 2026-11-26
+
+- In dictionary results, show pinyin after the Chinese text instead of above it, so Lao descenders no longer overlap the pinyin and characters are no longer spaced out. Entries with several meanings show each meaning on its own line. Flashcards are unchanged.
+
 ## 1.2.1 · 2026-11-26
 
 - Correct pinyin for polyphonic characters that the pinyin library reads wrongly: 值长 (zhí zhǎng), 卷尺 and 卷扬机 (juǎn), 差旅费 (chāi), 差动保护 (chā) and 空载 (zài). Displayed pinyin and pinyin search use the corrected readings. Recordings are unchanged.
