@@ -5,23 +5,59 @@ const vm = require('node:vm');
 
 const page = fs.readFileSync('index.html', 'utf8');
 const start = page.indexOf('const initialDB =');
-const end = page.indexOf('let db = restoreVocabulary', start);
-assert(start >= 0 && end > start, 'Cannot find the vocabulary and merge logic');
-const scope = { pinyinPro: { pinyin: text => text }, window: {} };
-vm.createContext(scope);
-vm.runInContext(fs.readFileSync('vocabulary.js', 'utf8'), scope);
-vm.runInContext(page.slice(start, end) + '\nwords = mergeVocabulary(initialDB);', scope);
-vm.runInContext(`
-    migrated = restoreVocabulary([
-        { lao: 'ລະດັບນ້ຳ', meanings: ['水平仪', '水平尺', '水位'], cat: '工作' },
-        { lao: 'ເງິນ', meanings: ['钱', '银/钱'], cat: '生活' },
-        { lao: '个人词测试', zh: '保留', cat: '生活' }
-    ]);
-`, scope);
+const end = page.indexOf('let currentCat =', start);
+assert(start >= 0 && end > start, '找不到词库和存储逻辑');
+const saved = new Map(Object.entries({
+    lao_db_v11: JSON.stringify([
+        { lao: 'ລະດັບນ້ຳ', meanings: ['水平仪', '水平尺', '水位'], cat: '生活' },
+        { lao: 'ເງິນ', meanings: ['钱', '银/钱', '个人注释'], cat: '生活' },
+        { lao: '个人词测试', zh: '保留', cat: '工作' }
+    ]),
+    lao_wrong_v11: JSON.stringify([
+        { lao: ' ລະດັບນ້ຳ ' }, { lao: '个人词测试' }, { lao: '个人词测试' }, { lao: '已删除词' }
+    ])
+}));
+function loadVocabulary(storage, warnings = []) {
+    const scope = {
+        pinyinPro: { pinyin: text => text },
+        window: {},
+        console: { warn: message => warnings.push(message) },
+        localStorage: {
+            getItem: key => storage.get(key) ?? null,
+            setItem: (key, value) => storage.set(key, value),
+            removeItem: key => storage.delete(key)
+        }
+    };
+    vm.createContext(scope);
+    vm.runInContext(fs.readFileSync('vocabulary.js', 'utf8'), scope);
+    vm.runInContext(page.slice(start, end) + '\nwords = mergeVocabulary(initialDB); migrated = db;', scope);
+    return scope;
+}
+
+const scope = loadVocabulary(saved);
 assert.equal(scope.migrated.length, scope.words.length + 1);
 assert.equal(scope.migrated.find(word => word.lao === 'ລະດັບນ້ຳ').zh, '水位');
-assert.equal(scope.migrated.find(word => word.lao === 'ເງິນ').zh, '钱');
-assert(scope.migrated.some(word => word.lao === '个人词测试'));
+assert.equal(scope.migrated.find(word => word.lao === 'ລະດັບນ້ຳ').cat, '工作');
+assert.equal(scope.migrated.find(word => word.lao === 'ເງິນ').zh, '钱；个人注释');
+assert.deepEqual(JSON.parse(saved.get('lao_custom_v12')), [
+    { lao: 'ເງິນ', meanings: ['个人注释'], cat: '生活' },
+    { lao: '个人词测试', meanings: ['保留'], cat: '工作' }
+]);
+assert.deepEqual(JSON.parse(saved.get('lao_wrong_v12')), ['ລະດັບນ້ຳ', '个人词测试']);
+assert(!saved.has('lao_db_v11') && !saved.has('lao_wrong_v11'));
+const warnings = [];
+const damaged = loadVocabulary(new Map([
+    ['lao_custom_v12', '非法 JSON'],
+    ['lao_wrong_v12', '{}'],
+    ['lao_memory_v11', '[]']
+]), warnings);
+assert.equal(vm.runInContext('Array.isArray(custom) && custom.length === 0', damaged), true);
+assert.equal(vm.runInContext('Array.isArray(wrongs) && wrongs.length === 0', damaged), true);
+assert.equal(vm.runInContext("memory['全部']", damaged), 0);
+assert.equal(damaged.migrated.length, damaged.words.length);
+for (const key of ['lao_custom_v12', 'lao_wrong_v12', 'lao_memory_v11']) {
+    assert.equal(warnings.filter(message => message.includes(key)).length, 1);
+}
 const words = scope.words;
 assert.equal(scope.window.NAMOU_VOCABULARY.length, words.length, 'Duplicate headword in source vocabulary');
 assert(words.length > 0, 'Missing vocabulary');

@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>小词典 · 南欧江水电站学习好帮手</title>
     <script src="vendor/pinyin-pro-3.29.5.js"></script>
-    <script src="vocabulary.js?v=1.1.0"></script>
-    <script src="audio/manifest.js?v=1.1.0" defer></script>
-    <script src="audio/lao/manifest.js?v=1.1.0" defer></script>
+    <script src="vocabulary.js?v=1.1.2"></script>
+    <script src="audio/manifest.js?v=1.1.2" defer></script>
+    <script src="audio/lao/manifest.js?v=1.1.2" defer></script>
     <style>
         @font-face {
             font-family: "Phetsarath OT";
@@ -82,7 +82,7 @@
         .flashcard.animated-flip { transition: transform 0.6s cubic-bezier(0.4,0.2,0.2,1); }
         .flashcard.flipped { transform: rotateY(180deg); }
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%); box-shadow: 0 18px 38px rgba(0,0,0,0.08); padding: 24px; box-sizing: border-box; }
-        /* Hide the inactive face explicitly to avoid mirrored controls in 3D layers. */
+        /* 隐藏未显示的卡面，避免翻转时出现镜像按钮。 */
         .flashcard.animated-flip .card-face { transition: visibility 0s 0.3s; }
         .flashcard:not(.flipped) .card-back, .flashcard.flipped .card-front {
             visibility: hidden;
@@ -283,7 +283,7 @@
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.1.1</span></h1>
+            <h1>小词典 <span class="dict-version">v1.1.2</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
@@ -372,7 +372,7 @@
                 <button class="btn btn-normal" onclick="document.getElementById('fileIn').click()">导入恢复</button>
                 <input type="file" id="fileIn" style="display:none" accept=".json" onchange="importData(event)">
             </div>
-            <button onclick="resetData()" style="width:100%; margin-top:16px; padding:12px; background:none; border:none; color:var(--danger); font-size:13px;">⚠️ 清空数据并恢复默认100词</button>
+            <button onclick="resetData()" style="width:100%; margin-top:16px; padding:12px; background:none; border:none; color:var(--danger); font-size:13px;">⚠️ 清空个人数据并恢复默认词库</button>
         </div>
     </div>
 </div>
@@ -404,14 +404,51 @@ function showSpeechNotice(message) {
 
 let bufferedAudioContext;
 let bufferedClip;
-let bufferedBank;
+const bufferedBanks = new Map();
+const pendingBufferedBanks = new Map();
+const BUFFERED_BANK_LIMIT = 4;
 
-function stopBufferedClip() {
+function loadBufferedBank(url, context) {
+    if (bufferedBanks.has(url)) {
+        const buffer = bufferedBanks.get(url);
+        bufferedBanks.delete(url);
+        bufferedBanks.set(url, buffer);
+        return Promise.resolve(buffer);
+    }
+    if (pendingBufferedBanks.has(url)) return pendingBufferedBanks.get(url).promise;
+
+    const request = { controller: new AbortController() };
+    const { signal } = request.controller;
+    request.promise = (async () => {
+        const response = await fetch(url, { signal });
+        if (!response.ok) throw new Error('音频下载失败');
+        const buffer = await context.decodeAudioData(await response.arrayBuffer());
+        // 解码本身无法取消，已取消的请求不能重新写入缓存。
+        if (!signal.aborted) {
+            bufferedBanks.set(url, buffer);
+            if (bufferedBanks.size > BUFFERED_BANK_LIMIT) {
+                bufferedBanks.delete(bufferedBanks.keys().next().value);
+            }
+        }
+        return buffer;
+    })().finally(() => {
+        if (pendingBufferedBanks.get(url) === request) pendingBufferedBanks.delete(url);
+    });
+    pendingBufferedBanks.set(url, request);
+    return request.promise;
+}
+
+function stopBufferedClip(nextUrl) {
     if (!bufferedClip) return;
     const playback = bufferedClip;
     bufferedClip = null;
     clearTimeout(playback.timer);
-    playback.controller.abort();
+    // 连续点同一音频包时保留正在加载的请求，取消旧播放即可。
+    if (playback.url !== nextUrl) {
+        const request = pendingBufferedBanks.get(playback.url);
+        pendingBufferedBanks.delete(playback.url);
+        request?.controller.abort();
+    }
     if (playback.source) {
         playback.source.onended = null;
         playback.source.stop();
@@ -419,7 +456,7 @@ function stopBufferedClip() {
 }
 
 async function playBufferedClip(text, clip, AudioContext) {
-    const playback = { controller: new AbortController() };
+    const playback = { url: clip.src };
     bufferedClip = playback;
     playback.timer = setTimeout(() => {
         if (bufferedClip !== playback) return;
@@ -432,15 +469,10 @@ async function playBufferedClip(text, clip, AudioContext) {
         const resumed = context.resume();
         await resumed;
         if (bufferedClip !== playback) return;
-        if (bufferedBank?.url !== clip.src) {
-            const response = await fetch(clip.src, { signal: playback.controller.signal });
-            if (!response.ok) throw new Error('Audio download failed');
-            const buffer = await context.decodeAudioData(await response.arrayBuffer());
-            if (bufferedClip !== playback) return;
-            bufferedBank = { url: clip.src, buffer };
-        }
+        const buffer = await loadBufferedBank(clip.src, context);
+        if (bufferedClip !== playback) return;
         const source = context.createBufferSource();
-        source.buffer = bufferedBank.buffer;
+        source.buffer = buffer;
         source.connect(context.destination);
         source.onended = () => {
             if (bufferedClip !== playback) return;
@@ -549,8 +581,8 @@ function refreshVoices() {
     }
 }
 
-function stopChineseSpeech() {
-    stopBufferedClip();
+function stopChineseSpeech(nextUrl) {
+    stopBufferedClip(nextUrl);
     clearInterval(recordedBoundaryTimer);
     if (activeRecordedAudio) {
         activeRecordedAudio.onloadedmetadata = null;
@@ -581,8 +613,8 @@ document.addEventListener('click', event => {
 
 function speakLao(text) {
     if (!text) return;
-    stopChineseSpeech();
     const clip = window.NAMOU_LAO_CLIPS?.[laoKey(text)];
+    stopChineseSpeech(clip?.src);
     if (clip) {
         playRecordedSpeech(text, clip);
     } else {
@@ -592,8 +624,8 @@ function speakLao(text) {
 
 function speakChinese(text) {
     if (typeof text !== 'string' || !text.trim()) return;
-    stopChineseSpeech();
-    const clip = window.NAMOU_VOICE_CLIPS && window.NAMOU_VOICE_CLIPS[text.trim()];
+    const clip = window.NAMOU_VOICE_CLIPS?.[text.trim()];
+    stopChineseSpeech(clip?.src);
     if (clip) {
         playRecordedSpeech(text.trim(), clip);
         return;
@@ -648,7 +680,7 @@ function initChineseSpeech() {
 }
 
 // ==========================================
-// 1. 数据配置区：完整的100个初始核心词库
+// 1. 数据配置区：公共词库（来自 vocabulary.js）
 // ==========================================
 const initialDB = window.NAMOU_VOCABULARY;
 
@@ -666,7 +698,9 @@ function laoKey(text) {
 
 // 公共词条以新版分类为准，旧备份仍可保留个人词条和译义。
 const workVocabulary = new Set(initialDB.filter(word => word.cat === '工作').map(word => laoKey(word.lao)));
-const publicVocabulary = new Set(initialDB.map(word => laoKey(word.lao)));
+const publicVocabulary = new Map(initialDB.map(word => [
+    laoKey(word.lao), new Set(word.zh.split('；').map(meaning => meaning.trim()))
+]));
 
 function mergeVocabulary(words) {
     const entries = new Map();
@@ -692,7 +726,7 @@ function mergeVocabulary(words) {
     }));
 }
 
-// 去除旧公开词库遗留译义，保留浏览器中另外添加的词条及译义。
+// 仅用于迁移 v11 存储和旧版备份，过滤旧公共译义。
 const previousMeanings = new Map(Object.entries({
   "ເງິນ": [
     "银/钱"
@@ -877,25 +911,83 @@ const previousMeanings = new Map(Object.entries({
   ]
 }));
 
-function restoreVocabulary(saved) {
-    const entries = Array.isArray(saved) ? saved : [];
-    const personal = entries.map(word => {
-        const key = laoKey(word.lao);
-        const removed = previousMeanings.get(key) || [];
-        const meanings = (word.meanings || [word.zh]).filter(meaning => !removed.includes(meaning.trim()));
-        if (key === 'ລະດັບນ້ຳ') return { ...word, meanings: ['水位'] };
-        return { ...word, meanings };
-    });
-    return mergeVocabulary([...initialDB, ...personal]);
+function extractCustomEntries(words, legacy = false) {
+    const entries = new Map();
+    for (const word of Array.isArray(words) ? words : []) {
+        if (typeof word?.lao !== 'string') continue;
+        const lao = laoKey(word.lao);
+        if (!lao) continue;
+        const publicMeanings = publicVocabulary.get(lao);
+        const removed = legacy && publicMeanings ? previousMeanings.get(lao) : null;
+        const values = Array.isArray(word.meanings) ? word.meanings : (typeof word.zh === 'string' ? word.zh.split('；') : []);
+        const meanings = values.filter(value => typeof value === 'string').map(value => value.trim())
+            .filter(value => value && !publicMeanings?.has(value) && !removed?.includes(value));
+        if (!meanings.length) continue;
+
+        const entry = entries.get(lao) || { lao, meanings: [], cat: '生活' };
+        entry.meanings = [...new Set([...entry.meanings, ...meanings])];
+        if (publicMeanings ? workVocabulary.has(lao) : (word.categories || [word.cat]).includes('工作')) {
+            entry.cat = '工作';
+        }
+        entries.set(lao, entry);
+    }
+    return Array.from(entries.values());
 }
 
-let db = restoreVocabulary(JSON.parse(localStorage.getItem('lao_db_v11')));
-function mergeWrongEntries(words) {
-    const entries = new Map(db.map(word => [word.lao, word]));
-    return mergeVocabulary(words).map(word => entries.get(word.lao) || word);
+function mergeWrongEntries(keys, vocabulary) {
+    const entries = new Map(vocabulary.map(word => [word.lao, word]));
+    return Array.from(new Set(keys.filter(key => typeof key === 'string').map(laoKey)))
+        .map(key => entries.get(key)).filter(Boolean);
 }
-let wrongs = mergeWrongEntries(JSON.parse(localStorage.getItem('lao_wrong_v11')) || []);
-let memory = JSON.parse(localStorage.getItem('lao_memory_v11')) || { "全部":0, "生活":0, "工作":0, "错题":0 };
+
+function legacyWrongKeys(words) {
+    return Array.isArray(words) ? words.map(word => word?.lao) : [];
+}
+
+function readStored(key, fallback, missing = fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (raw === null) return missing;
+        const value = JSON.parse(raw);
+        const valid = Array.isArray(fallback) ? Array.isArray(value)
+            : value !== null && typeof value === 'object' && !Array.isArray(value);
+        if (valid) return value;
+    } catch {
+        // 读取或解析失败时使用默认值，让页面仍可打开。
+    }
+    console.warn(`本地数据 ${key} 无法读取或格式不正确，已使用默认值。`);
+    return fallback;
+}
+
+const customKey = 'lao_custom_v12';
+const wrongKey = 'lao_wrong_v12';
+const savedCustom = readStored(customKey, [], null);
+const legacyVocabulary = readStored('lao_db_v11', [], null);
+let custom = savedCustom === null
+    ? extractCustomEntries(legacyVocabulary, true)
+    : extractCustomEntries(savedCustom);
+let db = mergeVocabulary([...initialDB, ...custom]);
+const savedWrong = readStored(wrongKey, [], null);
+const legacyWrong = readStored('lao_wrong_v11', [], null);
+const savedWrongKeys = savedWrong === null ? legacyWrongKeys(legacyWrong) : savedWrong;
+let wrongs = mergeWrongEntries(savedWrongKeys, db);
+
+function saveWrongEntries() {
+    localStorage.setItem(wrongKey, JSON.stringify(wrongs.map(word => word.lao)));
+}
+
+function saveData() {
+    localStorage.setItem(customKey, JSON.stringify(custom));
+    saveWrongEntries();
+}
+
+// 先保存新版数据，成功后才移除旧键。
+if (legacyVocabulary !== null || legacyWrong !== null) {
+    saveData();
+    localStorage.removeItem('lao_db_v11');
+    localStorage.removeItem('lao_wrong_v11');
+}
+let memory = readStored('lao_memory_v11', { "全部":0, "生活":0, "工作":0, "错题":0 });
 
 let currentCat = '全部';
 let currentList = [];
@@ -1131,6 +1223,13 @@ function setCardFlipped(card, flipped, animate = false) {
     card.classList.toggle('flipped', flipped);
 }
 
+function renderCardMeaning(meaning, pinyin) {
+    const ruby = document.getElementById('cardZhPy');
+    const rt = document.createElement('rt');
+    rt.textContent = pinyin;
+    ruby.replaceChildren(document.createTextNode(meaning), rt);
+}
+
 function updateCardUI() {
     const wordForSpeech = currentList[currentIndex];
     fillMeanings(document.getElementById('cardMeaning'), wordForSpeech);
@@ -1146,7 +1245,7 @@ function updateCardUI() {
     if (currentList.length === 0) {
         document.getElementById('cardLaoFront').innerText = "太棒了";
         document.getElementById('cardLaoBack').innerText = "空空如也";
-        document.getElementById('cardZhPy').innerHTML = "该分类下没有词汇<rt>请添加或切换分类</rt>";
+        renderCardMeaning("该分类下没有词汇", "请添加或切换分类");
         document.getElementById('cardCatTag').style.display = 'none';
         document.getElementById('progressText').innerText = "0/0";
         document.getElementById('progressBar').style.width = "0%";
@@ -1161,7 +1260,7 @@ function updateCardUI() {
     
     // 背面 (双面显示：原词 + 翻译)
     document.getElementById('cardLaoBack').innerText = word.lao;
-    document.getElementById('cardZhPy').innerHTML = `${word.zh}<rt>${word.py}</rt>`;
+    renderCardMeaning(word.zh, word.py);
     document.getElementById('cardCatTag').innerText = word.cat;
     document.getElementById('cardCatTag').style.display = 'block';
 
@@ -1189,13 +1288,13 @@ function handleResult(isRemembered) {
         // 记入错题本 (去重)
         if (!wrongs.some(w => sameVocabularyEntry(w, word))) {
             wrongs.push(word);
-            saveData();
+            saveWrongEntries();
         }
     } else {
         // 如果在错题本里点击了“记住了”，则从错题本移除
         if (currentCat === '错题') {
             wrongs = wrongs.filter(w => !sameVocabularyEntry(w, word));
-            saveData();
+            saveWrongEntries();
             if (randomStudy) {
                 currentList.splice(currentIndex, 1);
                 if (currentIndex >= currentList.length) currentIndex = 0;
@@ -1232,9 +1331,9 @@ function addNewWord() {
         return;
     }
 
-    const py = pinyinPro.pinyin(zh);
-    db = mergeVocabulary([{ lao, zh, py, cat }, ...db]);
-    wrongs = mergeWrongEntries(wrongs);
+    custom = extractCustomEntries([...custom, { lao, zh, cat }]);
+    db = mergeVocabulary([...initialDB, ...custom]);
+    wrongs = mergeWrongEntries(wrongs.map(word => word.lao), db);
     saveData();
     
     alert("✅ 成功加入词库！");
@@ -1243,15 +1342,9 @@ function addNewWord() {
     updateAdminStats();
 }
 
-function saveData() {
-    localStorage.setItem('lao_db_v11', JSON.stringify(db));
-    localStorage.setItem('lao_wrong_v11', JSON.stringify(wrongs));
-}
-
 // 导出备份 (生成JSON文件)
 function exportData() {
-    // 将 db 和 wrongs 打包导出
-    const exportObj = { db: db, wrongs: wrongs };
+    const exportObj = { version: 2, custom, wrongs: wrongs.map(word => word.lao) };
     const dataStr = JSON.stringify(exportObj);
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -1274,10 +1367,19 @@ function importData(event) {
     reader.onload = function(e) {
         try {
             const imported = JSON.parse(e.target.result);
-            if (imported.db && Array.isArray(imported.db)) {
-                if (confirm("备份读取成功！是否覆盖当前所有数据？")) {
-                    db = restoreVocabulary(imported.db);
-                    wrongs = mergeWrongEntries(imported.wrongs || []);
+            const currentFormat = imported?.version === 2
+                && Array.isArray(imported.custom) && Array.isArray(imported.wrongs);
+            const legacyFormat = imported?.version === undefined && Array.isArray(imported?.db);
+            if (currentFormat || legacyFormat) {
+                const importedCustom = currentFormat
+                    ? extractCustomEntries(imported.custom) : extractCustomEntries(imported.db, true);
+                const importedDB = mergeVocabulary([...initialDB, ...importedCustom]);
+                const importedWrongs = mergeWrongEntries(currentFormat
+                    ? imported.wrongs : legacyWrongKeys(imported.wrongs), importedDB);
+                if (confirm("备份读取成功！是否覆盖当前个人词条和错题本？")) {
+                    custom = importedCustom;
+                    db = importedDB;
+                    wrongs = importedWrongs;
                     saveData();
                     alert("恢复成功！页面将重新加载。");
                     location.reload();
@@ -1294,9 +1396,11 @@ function importData(event) {
 }
 
 function resetData() {
-    if(confirm("⚠️ 危险操作！这会清空你手动添加的所有单词和错题本，恢复到最初的100词状态，确定要继续吗？")) {
+    if(confirm("⚠️ 危险操作！这会清空自己添加的词和译义、错题本及背诵进度，并恢复默认词库。确定要继续吗？")) {
         localStorage.removeItem('lao_db_v11');
         localStorage.removeItem('lao_wrong_v11');
+        localStorage.removeItem(customKey);
+        localStorage.removeItem(wrongKey);
         localStorage.removeItem('lao_memory_v11');
         location.reload();
     }
