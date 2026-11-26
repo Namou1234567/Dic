@@ -127,6 +127,9 @@
             --line: #cadde1;
         }
         [hidden] { display: none !important; }
+        /* Disable double-tap zoom so quick repeated taps (for example on 记住了) do not zoom the page.
+           Pinch zoom keeps working, and taps respond without the double-tap delay. */
+        html { touch-action: manipulation; }
         body { background: var(--bg-color); padding-bottom: 96px; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
         .container { max-width: 680px; padding: 24px 16px; }
         .dict-header {
@@ -314,7 +317,7 @@
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.2.4</span></h1>
+            <h1>小词典 <span class="dict-version">v1.2.5</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
