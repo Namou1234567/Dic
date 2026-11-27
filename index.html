@@ -12,9 +12,9 @@
     <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
     <link rel="manifest" href="manifest.webmanifest">
     <script src="vendor/pinyin-pro-3.29.5.js"></script>
-    <script src="vocabulary.js?v=1.3.0-2"></script>
-    <script src="audio/manifest.js?v=1.3.0-2" defer></script>
-    <script src="audio/lao/manifest.js?v=1.3.0-2" defer></script>
+    <script src="vocabulary.js?v=1.3.1"></script>
+    <script src="audio/manifest.js?v=1.3.1" defer></script>
+    <script src="audio/lao/manifest.js?v=1.3.1" defer></script>
     <style>
         @font-face {
             font-family: "Phetsarath OT";
@@ -330,7 +330,7 @@
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.3.0</span></h1>
+            <h1>小词典 <span class="dict-version">v1.3.1</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
@@ -804,12 +804,30 @@ if (typeof pinyinPro.customPinyin === 'function') pinyinPro.customPinyin(pinyinC
 // ==========================================
 const correctedLaoSpellings = new Map([
     ['ການຊຳລະງິນ', 'ການຊຳລະເງິນ'],
-    ['ຄວາມສະສະເໝີພາບ', 'ຄວາມສະເໝີພາບ']
+    ['ຄວາມສະສະເໝີພາບ', 'ຄວາມສະເໝີພາບ'],
+    ['ສົງ', 'ໂສ້ງ'],
+    ['ສົງຂາສັ້ນ', 'ໂສ້ງຂາສັ້ນ'],
+    ['ປັດກວດ', 'ປັດກວາດ'],
+    ['ຫ້າງສັນພະສິນຄ້າ', 'ຫ້າງສັບພະສິນຄ້າ'],
+    ['ຂີ້ຕີ້', 'ຂີ້ຖີ່'],
+    ['ຄວາມຫຼົ້ມເຫຼວ', 'ຄວາມລົ້ມເຫຼວ'],
+    ['ກາລຸນາ', 'ກະລຸນາ']
 ]);
 function laoKey(text) {
     const key = text.trim().normalize('NFC');
     return correctedLaoSpellings.get(key) || key;
 }
+
+// Public headwords replaced by a different word with the same meaning. Missed words move to
+// the replacement, but a personal entry under the old word stays as the user wrote it.
+const replacedHeadwords = new Map([
+    ['ລຸກ', 'ຕື່ນນອນ'],
+    ['ລາຄາຍ່ອຍ', 'ລາຄາຂາຍຍ່ອຍ'],
+    ['ແຜ່ນແພ', 'ຜ້າເຊັດປາກ'],
+    ['ຜ້າສະອັດ', 'ຜ້າອະນາໄມ'],
+    ['ສັ້ນນ່ອງ', 'ນ່ອງ'],
+    ['ບຸນພະນົມບາ', 'ບຸນທາດຫຼວງ']
+]);
 
 // Use current categories for public entries and keep personal entries and meanings from older backups.
 const workVocabulary = new Set(initialDB.filter(word => word.cat === '工作').map(word => laoKey(word.lao)));
@@ -859,7 +877,8 @@ const previousMeanings = new Map(Object.entries({
     "米/稻谷"
   ],
   "ເຂົ້າປຸ້ນ": [
-    "老挝米粉"
+    "老挝米粉",
+    "凉拌粉"
   ],
   "ຜ້າເຊັດຕົວ": [
     "大浴巾"
@@ -979,7 +998,26 @@ const previousMeanings = new Map(Object.entries({
     "职业道德"
   ],
   "ຢາຂ້າເຊື້ອ": [
-    "消毒药/抗生素"
+    "消毒药/抗生素",
+    "抗生素"
+  ],
+  "ກະລຸນາ": [
+    "请(委婉)"
+  ],
+  "ປະເທດລາວ": [
+    "老挝国家"
+  ],
+  "ອີກບໍ່ດົນ": [
+    "稍后"
+  ],
+  "ໂຄມໄຟ": [
+    "台灯"
+  ],
+  "ຕີບານ": [
+    "排球"
+  ],
+  "ມາຮອດດຽວນີ້": [
+    "马上到"
   ],
   "ໄຟຟ້າລັດວົງຈອນ": [
     "短路"
@@ -1030,8 +1068,10 @@ function extractCustomEntries(words, legacy = false) {
     const entries = new Map();
     for (const word of Array.isArray(words) ? words : []) {
         if (typeof word?.lao !== 'string') continue;
-        const lao = laoKey(word.lao);
+        let lao = laoKey(word.lao);
         if (!lao) continue;
+        // Older backups hold public entries too, so move replaced public words to their replacement.
+        if (legacy && !publicVocabulary.has(lao)) lao = replacedHeadwords.get(lao) || lao;
         const publicMeanings = publicVocabulary.get(lao);
         const removed = legacy && publicMeanings ? previousMeanings.get(lao) : null;
         const values = Array.isArray(word.meanings) ? word.meanings : (typeof word.zh === 'string' ? word.zh.split('；') : []);
@@ -1051,8 +1091,10 @@ function extractCustomEntries(words, legacy = false) {
 
 function mergeWrongEntries(keys, vocabulary) {
     const entries = new Map(vocabulary.map(word => [word.lao, word]));
-    return Array.from(new Set(keys.filter(key => typeof key === 'string').map(laoKey)))
-        .map(key => entries.get(key)).filter(Boolean);
+    return Array.from(new Set(keys.filter(key => typeof key === 'string').map(key => {
+        const lao = laoKey(key);
+        return entries.has(lao) ? lao : replacedHeadwords.get(lao) || lao;
+    }))).map(key => entries.get(key)).filter(Boolean);
 }
 
 function legacyWrongKeys(words) {
