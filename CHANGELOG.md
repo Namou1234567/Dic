@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.1 · 2026-11-28
+
+- Correct everyday words after review. Fix the Lao spelling of trousers (ໂສ້ງ), shorts (ໂສ້ງຂາສັ້ນ), to clean (ປັດກວາດ), shopping mall (ຫ້າງສັບພະສິນຄ້າ) and stingy (ຂີ້ຖີ່). Use the usual words for to get up (ຕື່ນນອນ), retail price (ລາຄາຂາຍຍ່ອຍ), napkin (ຜ້າເຊັດປາກ), sanitary pad (ຜ້າອະນາໄມ) and calf (ນ່ອງ).
+- Correct meanings: ເຂົ້າປຸ້ນ 米线/米粉, ປະເທດລາວ 老挝, ອີກບໍ່ດົນ 不久/很快/再过一会儿, ໂຄມໄຟ 灯/电灯, ຕີບານ 打球, ຢາຂ້າເຊື້ອ 消毒剂 and ມາຮອດດຽວນີ້ 刚到/现在到了.
+- Add ໂຄມໄຟໂຕະ 台灯, ບານສົ່ງ 排球 and ຢາຕ້ານເຊື້ອ 抗生素. Remove ບຸນພະເວດ and ບຸນພະນົມບາ, and the misspelled duplicates ຄວາມຫຼົ້ມເຫຼວ and ກາລຸນາ. The vocabulary has 2,018 Lao headwords.
+- Missed words saved under a corrected or replaced word move to the current entry.
+
 ## 1.3.0 · 2026-11-27
 
 - Mandarin recordings now use the Microsoft female voice Xiaoxiao at a slightly slower rate, so every word starts clearly. Lao recordings are unchanged.

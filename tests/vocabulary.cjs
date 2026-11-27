@@ -45,6 +45,14 @@ assert.deepEqual(JSON.parse(saved.get('lao_custom_v12')), [
 ]);
 assert.deepEqual(JSON.parse(saved.get('lao_wrong_v12')), ['ລະດັບນ້ຳ', '个人词测试']);
 assert(!saved.has('lao_db_v11') && !saved.has('lao_wrong_v11'));
+// Missed words under corrected or replaced headwords move to the current entry.
+assert.deepEqual(JSON.parse(vm.runInContext(
+    "JSON.stringify(mergeWrongEntries(['ສົງ', 'ລຸກ', 'ກາລຸນາ', 'ບຸນພະເວດ'], db).map(word => word.lao))", scope)),
+    ['ໂສ້ງ', 'ຕື່ນນອນ', 'ກະລຸນາ']);
+assert.deepEqual(JSON.parse(vm.runInContext(
+    "JSON.stringify(extractCustomEntries([{ lao: 'ລຸກ', zh: '起床', cat: '生活' }, " +
+    "{ lao: 'ເຂົ້າປຸ້ນ', zh: '凉拌粉', cat: '生活' }, { lao: 'ກາລຸນາ', zh: '请(委婉)', cat: '生活' }], true))", scope)),
+    []);
 const warnings = [];
 const damaged = loadVocabulary(new Map([
     ['lao_custom_v12', '非法 JSON'],
