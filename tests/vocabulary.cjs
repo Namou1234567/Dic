@@ -113,6 +113,10 @@ if (process.argv[2] === '--export') {
                 clip.start >= 0 && clip.end > clip.start, 'Invalid clip range for ' + key);
             limits.set(clip.src, Math.max(limits.get(clip.src) || 0, clip.end));
         }
+        // Tidiness rule shared with tools/generate_audio.py: at most two banks beyond the minimum.
+        const banks = new Set(keys.map(key => clips[key].src)).size;
+        assert(banks <= Math.ceil(keys.length / 50) + 2,
+            `${banks} audio banks for ${keys.length} clips; run python3 tools/generate_audio.py --repack`);
     }
     for (const [path, end] of limits) {
         const duration = Number(execFileSync('ffprobe', [

@@ -12,9 +12,17 @@ rebuilt into new bank files (new file names, so phones never mix a cached old
 bank with new timings). Clips for text no longer in the vocabulary are dropped,
 and bank files that no clip uses are deleted.
 
+Tidiness rule: a language may use at most EXTRA_BANKS more bank files than
+ceil(clips / BANK_SIZE). Small banks from additions and gaps left by removed
+clips both push the count up. When the limit is passed, every clip of that
+language is cut from its current bank and repacked in vocabulary order into
+new bank files, without synthesizing anything again. tests/vocabulary.cjs
+checks the same limit. Pass --repack to repack both languages regardless.
+
 Run from the repository root:
 
     python3 tools/generate_audio.py
+    python3 tools/generate_audio.py --repack
 
 Requirements: Node.js, FFmpeg, numpy and edge-tts. Network access to the
 edge-tts service is needed.
@@ -22,6 +30,7 @@ edge-tts service is needed.
 
 import asyncio
 import json
+import math
 import re
 import subprocess
 import sys
@@ -32,6 +41,7 @@ import numpy as np
 
 SAMPLE_RATE = 24000
 BANK_SIZE = 50
+EXTRA_BANKS = 2  # Allowed bank files beyond ceil(clips / BANK_SIZE); see the tidiness rule.
 CONCURRENCY = 16
 LANGUAGES = {
     'zh': {
@@ -171,19 +181,20 @@ async def synthesize(lang, texts, workdir):
     return {text: files[text] for text in texts}  # Keep vocabulary order in the banks.
 
 
-def bundle(lang, files, clips, next_bank):
-    """Concatenate clips into new banks and record each clip's time range."""
+def bundle(lang, items, clips, next_bank):
+    """Concatenate clips into new banks and record each clip's time range.
+
+    items is a list of (text, load) pairs; load() returns the clip's samples."""
     config = LANGUAGES[lang]
     gap = np.zeros(int(round(config['gap'] * SAMPLE_RATE)), dtype=np.int16)
-    items = list(files.items())
     for offset in range(0, len(items), BANK_SIZE):
         src = config['bank'].format(next_bank)
         parts, position = [], 0
-        for i, (text, path) in enumerate(items[offset:offset + BANK_SIZE]):
+        for i, (text, load) in enumerate(items[offset:offset + BANK_SIZE]):
             if i:
                 parts.append(gap)
                 position += len(gap)
-            samples = trim(decode(path))
+            samples = load()
             clips[text] = {'src': src,
                            'start': round(position / SAMPLE_RATE, 3),
                            'end': round((position + len(samples)) / SAMPLE_RATE, 3)}
@@ -195,9 +206,34 @@ def bundle(lang, files, clips, next_bank):
             input=np.concatenate(parts).tobytes(), check=True)
         next_bank += 1
     print(f'{lang}: wrote banks up to {src}', flush=True)
+    return next_bank
+
+
+def bank_limit(count):
+    return math.ceil(count / BANK_SIZE) + EXTRA_BANKS
+
+
+def repack(lang, order, clips, next_bank):
+    """Cut every clip from its current bank and pack them again in vocabulary order."""
+    banks = {}
+
+    def load(text):
+        clip = clips[text]
+        if clip['src'] not in banks:
+            banks[clip['src']] = decode(clip['src'])
+        start = int(round(clip['start'] * SAMPLE_RATE))
+        end = int(round(clip['end'] * SAMPLE_RATE))
+        return banks[clip['src']][start:end]
+
+    texts = [t for t in order if t in clips]
+    print(f'{lang}: repacking {len(texts)} clips', flush=True)
+    packed = {}
+    bundle(lang, [(t, lambda t=t: load(t)) for t in texts], packed, next_bank)
+    return packed
 
 
 def main():
+    force_repack = '--repack' in sys.argv[1:]
     words = exported_words()
     for lang, key in (('zh', 'zh'), ('lao', 'lao')):
         config = LANGUAGES[lang]
@@ -215,7 +251,8 @@ def main():
         print(f'{lang}: {len(missing)} entries need audio', flush=True)
         with tempfile.TemporaryDirectory() as tmp:
             files = asyncio.run(synthesize(lang, missing, Path(tmp)))
-            bundle(lang, files, clips, next_bank)
+            bundle(lang, [(t, lambda p=p: trim(decode(p))) for t, p in files.items()],
+                   clips, next_bank)
         write_manifest(lang, clips)
 
     # Drop clips for text that is no longer in the vocabulary and delete banks nobody uses.
@@ -225,6 +262,12 @@ def main():
         current = {t: clips[t] for t in words[key] if t in clips}
         if len(current) != len(clips):
             print(f'{lang}: removing {len(clips) - len(current)} unused clips', flush=True)
+            write_manifest(lang, current)
+        banks = {clip['src'] for clip in current.values()}
+        if force_repack or len(banks) > bank_limit(len(current)):
+            numbers = [int(config['pattern'].search(p.as_posix()).group(1))
+                       for p in Path('.').glob(config['glob'])]
+            current = repack(lang, words[key], current, max(numbers, default=0) + 1)
             write_manifest(lang, current)
         used = {clip['src'] for clip in current.values()}
         for path in Path('.').glob(config['glob']):
