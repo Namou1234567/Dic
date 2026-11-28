@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.5 · 2026-11-28
+
+- Repack the recordings in vocabulary order, 50 clips per file, and drop audio that no entry uses. The recordings shrink from 95 to 82 files and about 2 MB less, and flashcards in order rarely need a new file. Each phone downloads the recordings once more.
+- The recording generator now repacks a language by itself when it uses more than two files beyond the minimum, so additions and removals no longer leave the files scattered. The checks enforce the same limit.
+
 ## 1.3.4 · 2026-11-28
 
 - Lao recordings spell English abbreviations with Lao letter names, so ຕູ້ ATM is read as ຕູ້ ເອ ທີ ເອັມ instead of mixing in English. Six recordings are remade: ATM, VIP, SF6, GIS and two with UPS. The screen still shows the English letters.
