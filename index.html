@@ -12,9 +12,9 @@
     <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
     <link rel="manifest" href="manifest.webmanifest">
     <script src="vendor/pinyin-pro-3.29.5.js"></script>
-    <script src="vocabulary.js?v=1.3.1"></script>
-    <script src="audio/manifest.js?v=1.3.1" defer></script>
-    <script src="audio/lao/manifest.js?v=1.3.1" defer></script>
+    <script src="vocabulary.js?v=1.3.2"></script>
+    <script src="audio/manifest.js?v=1.3.2" defer></script>
+    <script src="audio/lao/manifest.js?v=1.3.2" defer></script>
     <style>
         @font-face {
             font-family: "Phetsarath OT";
@@ -330,7 +330,7 @@
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.3.1</span></h1>
+            <h1>小词典 <span class="dict-version">v1.3.2</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
@@ -811,7 +811,23 @@ const correctedLaoSpellings = new Map([
     ['ຫ້າງສັນພະສິນຄ້າ', 'ຫ້າງສັບພະສິນຄ້າ'],
     ['ຂີ້ຕີ້', 'ຂີ້ຖີ່'],
     ['ຄວາມຫຼົ້ມເຫຼວ', 'ຄວາມລົ້ມເຫຼວ'],
-    ['ກາລຸນາ', 'ກະລຸນາ']
+    ['ກາລຸນາ', 'ກະລຸນາ'],
+    // Bracket style: half-width brackets with a space before them.
+    ['ລໍຖ້າແດ່（ຖ້າບຶດໜຶ່ງ）', 'ລໍຖ້າແດ່ (ຖ້າບຶດໜຶ່ງ)'],
+    ['ພະນັກງານຍ່າງເຄື່ອງ（ພະນັກງານປະຕິບັດງານ）', 'ພະນັກງານຍ່າງເຄື່ອງ (ພະນັກງານປະຕິບັດງານ)'],
+    ['ພະນັກງານສ້ອມແປງ（ພະນັກງານບຳລຸງຮັກສາ）', 'ພະນັກງານສ້ອມແປງ (ພະນັກງານບຳລຸງຮັກສາ)'],
+    ['ກະບ່າຍ（ກະສວຍ）', 'ກະບ່າຍ (ກະສວຍ)'],
+    ['ຄຸມງານຜ່ານຈໍ(ລະບົບຕິດຕາມກວດກາ)', 'ຄຸມງານຜ່ານຈໍ (ລະບົບຕິດຕາມກວດກາ)'],
+    ['ພື້ນທີ່ປະຕິບັດງານ（ໜ້າວຽກ）', 'ພື້ນທີ່ປະຕິບັດງານ (ໜ້າວຽກ)'],
+    ['ໃຊ້ແຮງຄົນ/ມືຍົກ（ດ້ວຍມື）', 'ໃຊ້ແຮງຄົນ/ມືຍົກ (ດ້ວຍມື)'],
+    ['ກັບເວີເນີ (Governor)（ເຄື່ອງປັບຄວາມໄວ）', 'ກັບເວີເນີ (Governor) (ເຄື່ອງປັບຄວາມໄວ)'],
+    ['ປ້ອງກັນການຫຼຸດຈັງຫວະ（ປ້ອງກັນການຕົກຈັງຫວະ）', 'ປ້ອງກັນການຫຼຸດຈັງຫວະ (ປ້ອງກັນການຕົກຈັງຫວະ)'],
+    ['ສັ່ງຈ່າຍໄຟ（ຈ່າຍໄຟ）', 'ສັ່ງຈ່າຍໄຟ (ຈ່າຍໄຟ)'],
+    ['ຈັງຫວະພ້ອມ（ຈັງຫວະຖືກຕ້ອງ）', 'ຈັງຫວະພ້ອມ (ຈັງຫວະຖືກຕ້ອງ)'],
+    ['ບໍ່ພ້ອມຈັງຫວະ（ຈັງຫວະຜິດ）', 'ບໍ່ພ້ອມຈັງຫວະ (ຈັງຫວະຜິດ)'],
+    ['ຮາງ ບາບາ（ສາຍແມ່）', 'ຮາງ ບາບາ (ສາຍແມ່)'],
+    ['ການເຮັດວຽກ/ສັ່ງ（ການທຳງານ）', 'ການເຮັດວຽກ/ສັ່ງ (ການທຳງານ)'],
+    ['ບາບາ（ສາຍແມ່）', 'ບາບາ (ສາຍແມ່)']
 ]);
 function laoKey(text) {
     const key = text.trim().normalize('NFC');
@@ -861,6 +877,33 @@ function mergeVocabulary(words) {
 
 // Filter obsolete public meanings only when migrating v11 storage or legacy backups.
 const previousMeanings = new Map(Object.entries({
+  "ໂຕ": [
+    "只(动物量词)/身体"
+  ],
+  "ກະຊວງ": [
+    "部(政府部门)"
+  ],
+  "ແຄນ": [
+    "笙(老挝乐器)"
+  ],
+  "ນ້ຳອົບ": [
+    "香水(祭祀用)"
+  ],
+  "ຝ້າຍຜູກແຂນ": [
+    "白线(栓线用)"
+  ],
+  "ແທ້ເດ": [
+    "真的哦(语气词)"
+  ],
+  "ບໍ": [
+    "吗(疑问)"
+  ],
+  "ເດີ້": [
+    "语气助词(恳请/叮嘱)"
+  ],
+  "ໂພດ": [
+    "太...了(程度)"
+  ],
   "ເງິນ": [
     "银/钱"
   ],
