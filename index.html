@@ -12,10 +12,11 @@
     <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
     <link rel="manifest" href="manifest.webmanifest">
     <script src="vendor/pinyin-pro-3.29.5.js"></script>
-    <script src="vocabulary.js?v=1.3.5"></script>
-    <script src="audio/manifest.js?v=1.3.5" defer></script>
-    <script src="audio/lao/manifest.js?v=1.3.5" defer></script>
+    <script src="vocabulary.js?v=1.3.6"></script>
+    <script src="audio/manifest.js?v=1.3.6" defer></script>
+    <script src="audio/lao/manifest.js?v=1.3.6" defer></script>
     <style>
+        /* ---------- Fonts and colors ---------- */
         @font-face {
             font-family: "Phetsarath OT";
             src: url("fonts/PhetsarathOT-Regular.woff2") format("woff2");
@@ -30,259 +31,105 @@
             font-display: swap;
             unicode-range: U+0E80-0EFF;
         }
-        .dict-lao, .word-lao-main, .word-lao-sub, .dict-search [lang="lo"], #searchInput {
-            font-family: "Phetsarath OT", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
-        :root { 
-            --primary: #007aff; --success: #34c759; --danger: #ff3b30; 
-            --bg-color: #f2f2f7; --card-bg: #ffffff; --text-main: #1c1c1e; --text-sub: #8e8e93;
-        }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-color); margin: 0; padding-bottom: 90px; color: var(--text-main); -webkit-tap-highlight-color: transparent; }
-        
-        /* Bottom navigation */
-        .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); display: flex; border-top: 1px solid #e5e5ea; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .tab-item { flex: 1; text-align: center; padding: 12px 0; font-size: 11px; color: var(--text-sub); cursor: pointer; border: none; background: none; transition: color 0.2s; }
-        .tab-item.active { color: var(--primary); font-weight: 500; }
-        .tab-item i { display: block; font-size: 24px; margin-bottom: 3px; font-style: normal; }
-
-        .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; }
-        .page { display: none; animation: fadeIn 0.3s ease; }
-        .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Shared card styles */
-        .panel { background: var(--card-bg); border-radius: 16px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 16px; }
-
-        /* Search and dictionary */
-        .search-box { width: 100%; padding: 14px 18px; border: none; border-radius: 14px; background: var(--card-bg); box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-size: 16px; box-sizing: border-box; outline: none; margin-bottom: 20px; color: var(--text-main); }
-        .dict-title { text-align: center; font-size: 28px; font-weight: bold; color: var(--primary); margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,122,255,0.1); }
-        .dict-item { background: var(--card-bg); padding: 16px 20px; border-radius: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-        
-        /* Chinese pronunciation controls for the dictionary and flashcards */
-        .speech-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-        .speech-notice { position: fixed; left: 16px; right: 16px; bottom: 90px; z-index: 1100; max-width: 560px; margin: auto; padding: 12px 16px; border-radius: 12px; background: #333; color: #fff; font-size: 14px; line-height: 1.5; box-shadow: 0 4px 20px #0002; }
-        .speak-btn { min-width: 76px; min-height: 44px; padding: 8px 12px; border: 1px solid #c7dfff; border-radius: 12px; background: #eef6ff; color: #005bbb; font-size: 14px; cursor: pointer; }
-        .speak-btn:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
-        .speak-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-        .dict-item { gap: 12px; flex-wrap: wrap; }
-        .dict-item > div:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-        .dict-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-        #cardSpeak { margin-top: 12px; }
-
-        /* Study header */
-        .study-top-panel { background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,248,255,0.9)); border: 1px solid rgba(0,122,255,0.18); border-radius: 24px; padding: 18px 18px 16px; box-shadow: 0 16px 40px rgba(0,122,255,0.08); margin-bottom: 20px; }
-        .study-header { text-align: center; margin-bottom: 12px; }
-        .study-label { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 999px; background: rgba(0,122,255,0.14); color: var(--primary); font-size: 16px; font-weight: 700; }
-        .study-header small { display: block; margin-top: 8px; color: var(--text-sub); font-size: 14px; }
-        .progress-track { background: #e5e5ea; height: 8px; border-radius: 999px; overflow: hidden; margin-bottom: 16px; }
-        #progressBar { height: 100%; background: linear-gradient(90deg, #007aff, #34c759); width: 0%; transition: width 0.4s ease; border-radius: 999px; }
-
-        /* Category filters */
-        .cat-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-        .cat-scroll::-webkit-scrollbar { display: none; }
-        .cat-btn { padding: 10px 16px; border-radius: 20px; background: var(--card-bg); border: 1px solid #e5e5ea; font-size: 13px; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s ease; }
-        .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 500; }
-
-        /* Flip cards */
-        .flashcard-wrapper { perspective: 1000px; height: 320px; margin: 0 auto 24px; max-width: 430px; }
-        .flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; cursor: pointer; }
-        /* A symmetric curve reaches 90° at exactly half the duration (0.3s), when the faces swap
-           below. An asymmetric curve turned the card earlier, briefly showing a mirrored face on
-           browsers that do not fully honor backface-visibility (notably iOS Safari). */
-        .flashcard.animated-flip { transition: transform 0.6s cubic-bezier(0.45, 0, 0.55, 1); }
-        .flashcard.flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%); box-shadow: 0 18px 38px rgba(0,0,0,0.08); padding: 24px; box-sizing: border-box; }
-        /* Hide the inactive face to prevent mirrored controls during flips. */
-        .flashcard.animated-flip .card-face { transition: visibility 0s 0.3s; }
-        .flashcard:not(.flipped) .card-back, .flashcard.flipped .card-front {
-            visibility: hidden;
-            pointer-events: none;
-        }
-        .card-back { transform: rotateY(180deg); background: linear-gradient(180deg, #fbfdff 0%, #e8f1ff 100%); border: 1px solid rgba(0,122,255,0.14); }
-
-        /* Card typography */
-        .word-lao-main { font-size: 42px; font-weight: 800; color: var(--primary); margin-bottom: 12px; text-align: center; line-height: 1.05; }
-        .word-lao-sub { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 18px; opacity: 0.88; text-align: center; }
-        .word-zh { font-size: 28px; line-height: 1.3; font-weight: 600; color: var(--text-main); text-align: center; }
-        rt { font-size: 14px; color: var(--text-sub); }
-        .cat-badge { position: absolute; top: 18px; left: 18px; padding: 6px 12px; border-radius: 999px; background: rgba(0,122,255,0.1); color: var(--primary); font-size: 12px; font-weight: 600; }
-        .hint-text { position: absolute; bottom: 18px; font-size: 13px; color: var(--text-sub); }
-
-        /* Study action buttons */
-        .action-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 12px; }
-        .btn { min-height: 52px; border-radius: 18px; padding: 14px; font-size: 15px; }
-        .btn-know { background: var(--success); color: white; box-shadow: 0 10px 24px rgba(52,199,89,0.18); }
-        .btn-dont { background: var(--card-bg); color: var(--danger); border: 1px solid rgba(255,59,48,0.18); }
-        .btn-normal { background: #e5e5ea; color: var(--text-main); }
-
-        /* Administration form */
-        input[type="text"], select { width: 100%; padding: 14px; border: 1px solid #e5e5ea; border-radius: 12px; margin-bottom: 12px; font-size: 15px; box-sizing: border-box; outline: none; background: #fafafa; }
-        input[type="text"]:focus, select:focus { border-color: var(--primary); background: #fff; }
-        
-        /* Statistics panel */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .stat-box { background: var(--card-bg); padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-        .stat-num { font-size: 28px; font-weight: bold; color: var(--text-main); display: block; margin-bottom: 4px; }
-        /* Hydropower learning interface */
         :root {
             --primary: #125b68;
             --success: #176858;
             --danger: #a3383b;
             --bg-color: #edf4f5;
+            --card-bg: #ffffff;
             --text-main: #142f3b;
             --text-sub: #47606a;
             --line: #cadde1;
+            --tint: #e5f3f2;
+        }
+
+        /* ---------- Page ---------- */
+        /* Disable double-tap zoom so quick repeated taps (for example on 记住了) do not zoom the page.
+           Pinch zoom keeps working, and taps respond without the double-tap delay. */
+        html { touch-action: manipulation; }
+        body {
+            margin: 0; padding-bottom: 96px; padding-bottom: calc(96px + env(safe-area-inset-bottom));
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color); color: var(--text-main); -webkit-tap-highlight-color: transparent;
+        }
+        .dict-lao, .word-lao-main, .word-lao-sub, .dict-search [lang="lo"], #searchInput {
+            font-family: "Phetsarath OT", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
         [hidden] { display: none !important; }
+        button { font-family: inherit; }
+        button:focus-visible, input:focus-visible { outline: 3px solid #268491; outline-offset: 2px; }
+        .container { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .panel { background: var(--card-bg); border-radius: 16px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 16px; }
+
+        /* ---------- Bottom navigation ---------- */
+        .tab-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+            display: flex; justify-content: center;
+            padding: 6px 8px; padding-bottom: calc(6px + env(safe-area-inset-bottom));
+            background: #fff; border-top: 1px solid var(--line);
+        }
+        .tab-item {
+            flex: 1; max-width: 220px; min-height: 52px; margin: 0 4px; padding: 6px 8px;
+            border: none; border-radius: 12px; background: none;
+            color: var(--text-sub); font-size: 13px; text-align: center; cursor: pointer; transition: color 0.2s;
+        }
+        .tab-item.active { background: var(--tint); color: var(--primary); font-weight: 700; }
+        .tab-item i { display: block; font-size: 19px; margin-bottom: 2px; font-style: normal; }
+
+        /* ---------- Update banner and speech messages ---------- */
         .update-banner {
             position: fixed; top: calc(36px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
             z-index: 1200; max-width: calc(100% - 32px); min-height: 44px; padding: 10px 18px;
             border: 0; border-radius: 999px; background: #f4b740; color: #2b1d00;
             font-size: 15px; font-weight: 700; white-space: nowrap; box-shadow: 0 8px 22px rgba(18,59,81,.3); cursor: pointer;
         }
-        /* Disable double-tap zoom so quick repeated taps (for example on 记住了) do not zoom the page.
-           Pinch zoom keeps working, and taps respond without the double-tap delay. */
-        html { touch-action: manipulation; }
-        body { background: var(--bg-color); padding-bottom: 96px; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
-        .container { max-width: 680px; padding: 24px 16px; }
+        .speech-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+        .speech-notice { position: fixed; left: 16px; right: 16px; bottom: 90px; z-index: 1100; max-width: 560px; margin: auto; padding: 12px 16px; border-radius: 12px; background: #333; color: #fff; font-size: 14px; line-height: 1.5; box-shadow: 0 4px 20px #0002; }
+
+        /* ---------- Pronunciation buttons ---------- */
+        .speak-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+            min-width: 76px; min-height: 44px; padding: 8px 12px;
+            border: 1px solid #bcdbd8; border-radius: 12px; background: #e6f4f2; color: #115763;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+        }
+        .speak-btn:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+        .speak-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .lao-speak-btn { background: #eef4fa; color: #244c71; border-color: #c7d9e8; }
+        /* Keep the pressed color briefly (is-pressed) so the tap is noticeable on phones. */
+        .speak-btn:active, .speak-btn.is-pressed { background: #176858; border-color: #176858; color: #fff; }
+        .lao-speak-btn:active, .lao-speak-btn.is-pressed { background: #244c71; border-color: #244c71; color: #fff; }
+        .speak-icon { width: 1.15em; height: 1.15em; flex: none; }
+
+        /* ---------- Dictionary ---------- */
         .dict-header {
+            margin-bottom: 16px; padding: 26px 24px 28px; border-radius: 22px; color: #fff;
             background: #123b51;
             background: radial-gradient(ellipse at right top, #237a81, transparent 72%), linear-gradient(145deg, #102e47, #164e60);
-            color: #fff; padding: 26px 24px 28px; border-radius: 22px; margin-bottom: 16px;
             box-shadow: 0 8px 20px rgba(19,59,78,.14);
         }
         .dict-header h1 { font-size: 2.5rem; line-height: 1.14; letter-spacing: .04em; margin: 0 0 8px; }
         .dict-version { margin-inline-start: .45rem; font-size: .75rem; font-weight: 600; letter-spacing: .03em; color: #d5edf0; white-space: nowrap; }
         .dict-header p { font-size: .9375rem; color: #d5edf0; letter-spacing: .06em; margin: 0; }
-        .dict-search {
-            margin-bottom: 14px; padding: 12px;
-            border: 1px solid #9bc7c4; border-radius: 16px; background: #e5f3f2;
-        }
-        .dict-search label {
-            display: block; margin-bottom: 7px;
-            color: #124e55; font-size: 17px; font-weight: 700;
-        }
-        input.search-box {
-            min-height: 48px; background: #fff; border: 2px solid #3c8185;
-            border-radius: 12px; font-size: 16px; margin: 0; box-shadow: none;
-        }
-        .dict-more {
-            display: grid; justify-items: center; gap: 8px;
-            margin-top: 14px; font-size: 13px; color: var(--text-sub);
-        }
-        .dict-more button {
-            min-height: 44px; padding: 8px 20px; border-radius: 12px;
-            border: 1px solid #9bc7c4; background: #fff;
-            color: var(--primary); font-size: 15px; font-weight: 700; cursor: pointer;
-        }
-        .dict-item { border: 1px solid var(--line); border-radius: 16px; padding: 13px 14px; box-shadow: 0 2px 5px rgba(18,55,70,.04); }
-        .dict-lao { font-size: 1.25rem; line-height: 1.45; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
-        .dict-actions { justify-content: flex-end; }
-        .dict-category { background: #edf3f5; color: var(--text-sub); border-radius: 8px; padding: 4px 8px; font-size: .75rem; }
-        .speak-btn { background: #e6f4f2; color: #115763; border-color: #bcdbd8; font-weight: 600; }
-        .tab-bar {
-            background: #fff; border-top-color: var(--line); justify-content: center;
-            padding: 6px 8px; padding-bottom: calc(6px + env(safe-area-inset-bottom));
-        }
-        .tab-item { max-width: 220px; margin: 0 4px; padding: 6px 8px; min-height: 52px; border-radius: 12px; font-size: 13px; }
-        .tab-item i { font-size: 19px; margin-bottom: 2px; }
-        .tab-item.active { background: #e5f3f2; font-weight: 700; }
-        button { font-family: inherit; }
-        button:focus-visible, input:focus-visible { outline: 3px solid #268491; outline-offset: 2px; }
-        .study-top-panel { background: #fff; border-color: var(--line); box-shadow: 0 4px 12px rgba(18,55,70,.06); }
-        .study-label, .cat-badge { background: #e5f3f2; }
-        #progressBar { background: linear-gradient(90deg, #125b68, #268679); }
-        .cat-btn { min-height: 44px; border-color: var(--line); flex-shrink: 0; }
-        .card-face { background: #fff; border: 1px solid var(--line); box-shadow: 0 6px 18px rgba(18,55,70,.09); -webkit-backface-visibility: hidden; }
-        .card-back { background: #f6fcfb; }
-        .word-lao-main, .word-lao-sub, .word-zh { max-width: 100%; overflow-wrap: anywhere; }
-        .word-lao-main { font-size: clamp(1.8rem, 8vw, 2.625rem); line-height: 1.3; }
-        .hint-text { left: 12px; right: 12px; text-align: center; }
-        .btn-know { border: 1px solid transparent; box-shadow: none; }
-        @media (max-width: 360px) {
-            .container { padding: 14px 10px; }
-            .dict-header { padding: 22px 18px; }
-            .dict-item { gap: 8px; padding: 11px; }
-            .dict-actions { gap: 4px; }
-            .card-face { padding-left: 14px; padding-right: 14px; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .page { animation: none; }
-            .flashcard.animated-flip, .flashcard.animated-flip .card-face, #progressBar { transition: none; }
-        }
-        #page-study .study-top-panel { padding: 10px 14px; margin-bottom: 10px; }
-        #page-study .study-header { margin-bottom: 6px; }
-        #page-study .study-label { padding: 3px 10px; }
-        #page-study .study-header small { margin-top: 4px; font-size: 12px; }
-        #page-study .progress-track { margin-bottom: 0; height: 6px; }
-        .study-progress-label { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 12px; color: var(--text-sub); }
-        #progressText { color: var(--primary); }
-        /* Shuffled practice uses amber so it is not mistaken for ordered progress. */
-        .study-top-panel.is-random #progressBar { background: linear-gradient(90deg, #b8720f, #e0a23a); }
-        .study-top-panel.is-random #progressText, .study-top-panel.is-random #progressLabel { color: #a1620a; }
-        #page-study .cat-scroll { gap: 5px; padding-bottom: 5px; }
-        #page-study .cat-btn { padding: 5px 9px; }
-        @media (max-width: 420px) {
-            #page-study .cat-scroll { gap: 3px; }
-            #page-study .cat-btn { padding-inline: 4px; font-size: 12px; }
-        }
-        @media (max-width: 320px) {
-            #page-study .cat-scroll { gap: 2px; }
-            #page-study .cat-btn { padding-inline: 1px; font-size: 11px; }
-        }
-        #page-study .flashcard-wrapper {
-            height: 260px; height: clamp(176px, calc(100vh - 340px), 290px);
-            height: clamp(176px, calc(100svh - 340px - env(safe-area-inset-bottom)), 290px);
-            margin-bottom: 8px;
-        }
-        #page-study .card-face {
-            padding: 32px 16px 30px;
-            border-color: var(--line);
-            box-shadow: 0 8px 24px rgba(25, 62, 62, .09);
-        }
-        #page-study .card-front {
-            padding-top: 16px;
-            padding-bottom: 50px;
-            background: linear-gradient(155deg, #ffffff, #f0f8f6);
-        }
-        #page-study .word-lao-main { margin-bottom: 6px; }
-        #page-study .long-prompt .word-lao-main {
-            font-size: clamp(1.25rem, 5vw, 1.6rem);
-        }
-        #page-study .word-lao-sub { margin-bottom: 6px; font-size: 1.125rem; }
-        #page-study .word-zh { font-size: clamp(1.35rem, 5.8vw, 1.65rem); font-weight: 700; }
-        #page-study .cat-badge { top: 7px; left: 9px; padding: 3px 8px; }
-        #page-study .hint-text { bottom: 8px; font-size: 13px; }
-        #page-study .card-front .hint-text {
-            left: 50%;
-            right: auto;
-            transform: translateX(-50%);
-            width: max-content;
-            max-width: calc(100% - 24px);
-            padding: 4px 14px;
-            border-radius: 999px;
-            background: #e3f1ee;
-            color: #23584f;
-            font-size: 16px;
-            font-weight: 700;
-            line-height: 1.35;
-        }
-        #cardSpeak { margin-top: 5px; }
-        #page-study .action-bar { margin-top: 6px; gap: 8px; }
-        #page-study .btn { min-height: 44px; padding: 8px; }
-        .study-previous { text-align: center; margin-top: 4px; }
-        .study-previous button { min-height: 44px; }
-        @media (max-height: 640px) {
-            .container { padding-top: 10px; }
-            #page-study .study-header small { display: none; }
-        }
-        .dict-actions { max-width: 50%; }
         /* Search stays at the top while scrolling the dictionary. The negative offset lets the title
            row (12px padding + 24px line) slide above the screen so only the input box stays visible. */
-        .dict-search { position: sticky; top: -36px; z-index: 20; box-shadow: 0 6px 14px rgba(18,55,70,.08); }
-        .dict-search label { line-height: 24px; }
+        .dict-search {
+            position: sticky; top: -36px; z-index: 20;
+            margin-bottom: 14px; padding: 12px;
+            border: 1px solid #9bc7c4; border-radius: 16px; background: var(--tint);
+            box-shadow: 0 6px 14px rgba(18,55,70,.08);
+        }
+        .dict-search label { display: block; margin-bottom: 7px; color: #124e55; font-size: 17px; font-weight: 700; line-height: 24px; }
         .search-field { position: relative; }
-        .search-field input.search-box { padding-right: 46px; }
+        .search-box {
+            box-sizing: border-box; width: 100%; min-height: 48px; margin: 0; padding: 14px 46px 14px 14px;
+            border: 2px solid #3c8185; border-radius: 12px; outline: none; background: #fff;
+            color: var(--text-main); font-size: 16px;
+        }
+        .search-box:focus { border-color: var(--primary); }
         .search-clear {
             position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
             width: 36px; height: 36px; border: 0; border-radius: 50%;
@@ -290,39 +137,162 @@
         }
         .search-clear:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
         .dict-result-count { margin: 0 4px 10px; font-size: 13px; color: var(--text-sub); }
-        /* Entry text: Lao headword with its category, then one line per meaning. */
-        .dict-item { align-items: flex-start; }
+        .dict-empty { text-align: center; padding: 30px; color: var(--text-sub); }
+        /* Entry: Lao headword with its category, the meanings and pinyin, then the two speak buttons. */
+        .dict-item {
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px;
+            margin-bottom: 12px; padding: 13px 14px;
+            border: 1px solid var(--line); border-radius: 16px; background: var(--card-bg);
+            box-shadow: 0 2px 5px rgba(18,55,70,.04);
+        }
+        .dict-item > div:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
         .dict-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; margin-bottom: 4px; }
-        .dict-head .dict-lao { font-size: 1.45rem; line-height: 1.4; margin-bottom: 0; }
-        .dict-head .dict-category { padding: 1px 7px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .dict-lao { font-size: 1.45rem; line-height: 1.4; font-weight: 700; color: var(--primary); }
+        .dict-category { padding: 1px 7px; border-radius: 6px; font-size: 12px; font-weight: 600; }
         .dict-category.cat-work { background: #e8f0fb; color: #2b5f9e; }
         .dict-category.cat-life { background: #e7f5ec; color: #2c7a4b; }
         .dict-meanings { display: grid; gap: 2px; }
         .dict-meaning { line-height: 1.5; }
         .dict-zh { font-size: 18px; color: var(--text-main); }
         .dict-py { font-size: 15px; color: var(--text-sub); }
-        /* Pronunciation buttons: line icon, equal widths in the dictionary list. */
-        .speak-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
-        .speak-icon { width: 1.15em; height: 1.15em; flex: none; }
-        .dict-actions { flex-direction: column; align-items: flex-end; }
-        .dict-actions .speak-btn { width: 84px; min-height: 40px; padding: 5px 8px; font-size: 13px; border-radius: 10px; }
         .matched-meaning { background: #ffedab; color: #25343b; border-radius: 3px; }
-        .lao-speak-btn { background: #eef4fa; color: #244c71; border-color: #c7d9e8; }
-        .dict-actions .speak-btn { white-space: nowrap; min-width: 0; }
-        #cardLaoSpeak { position: relative; z-index: 1; }
-        .speak-btn:active, .speak-btn.is-pressed {
-            background: #176858;
-            border-color: #176858;
-            color: #fff;
+        .dict-actions { display: flex; flex-direction: column; flex-wrap: wrap; align-items: flex-end; justify-content: flex-end; gap: 8px; max-width: 50%; }
+        .dict-actions .speak-btn { width: 84px; min-width: 0; min-height: 40px; padding: 5px 8px; border-radius: 10px; font-size: 13px; white-space: nowrap; }
+        .dict-more { display: grid; justify-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--text-sub); }
+        .dict-more button {
+            min-height: 44px; padding: 8px 20px; border-radius: 12px;
+            border: 1px solid #9bc7c4; background: #fff;
+            color: var(--primary); font-size: 15px; font-weight: 700; cursor: pointer;
         }
-        .lao-speak-btn:active, .lao-speak-btn.is-pressed {
-            background: #244c71;
-            border-color: #244c71;
-            color: #fff;
+
+        /* ---------- Flashcards: header, progress and categories ---------- */
+        .study-top-panel {
+            margin-bottom: 10px; padding: 10px 14px;
+            border: 1px solid var(--line); border-radius: 24px; background: #fff;
+            box-shadow: 0 4px 12px rgba(18,55,70,.06);
+        }
+        .study-header { text-align: center; margin-bottom: 6px; }
+        .study-label {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 3px 10px;
+            border-radius: 999px; background: var(--tint); color: var(--primary); font-size: 16px; font-weight: 700;
+        }
+        .study-header small { display: block; margin-top: 4px; color: var(--text-sub); font-size: 12px; }
+        .progress-track { background: #e5e5ea; height: 6px; border-radius: 999px; overflow: hidden; }
+        #progressBar { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #125b68, #268679); transition: width 0.4s ease; }
+        .study-progress-label { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 12px; color: var(--text-sub); }
+        #progressText { color: var(--primary); }
+        /* Shuffled practice uses amber so it is not mistaken for ordered progress. */
+        .study-top-panel.is-random #progressBar { background: linear-gradient(90deg, #b8720f, #e0a23a); }
+        .study-top-panel.is-random #progressText, .study-top-panel.is-random #progressLabel { color: #a1620a; }
+        .cat-scroll { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .cat-scroll::-webkit-scrollbar { display: none; }
+        .cat-btn {
+            flex-shrink: 0; min-height: 44px; padding: 5px 9px;
+            border: 1px solid var(--line); border-radius: 20px; background: var(--card-bg);
+            color: var(--text-sub); font-size: 13px; white-space: nowrap; cursor: pointer; transition: 0.2s ease;
+        }
+        .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 500; }
+        .cat-btn.cat-wrong { color: var(--danger); border-color: #ffcccb; }
+
+        /* ---------- Flashcards: the card ---------- */
+        .flashcard-wrapper {
+            perspective: 1000px; max-width: 430px; margin: 0 auto 8px;
+            height: 260px; height: clamp(176px, calc(100vh - 340px), 290px);
+            height: clamp(176px, calc(100svh - 340px - env(safe-area-inset-bottom)), 290px);
+        }
+        .flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; cursor: pointer; }
+        /* A symmetric curve reaches 90° at exactly half the duration (0.3s), when the faces swap
+           below. An asymmetric curve turned the card earlier, briefly showing a mirrored face on
+           browsers that do not fully honor backface-visibility (notably iOS Safari). */
+        .flashcard.animated-flip { transition: transform 0.6s cubic-bezier(0.45, 0, 0.55, 1); }
+        .flashcard.flipped { transform: rotateY(180deg); }
+        .card-face {
+            position: absolute; box-sizing: border-box; width: 100%; height: 100%; padding: 32px 16px 30px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 1px solid var(--line); border-radius: 26px; background: #fff;
+            box-shadow: 0 8px 24px rgba(25, 62, 62, .09);
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+        }
+        /* Hide the inactive face to prevent mirrored controls during flips. */
+        .flashcard.animated-flip .card-face { transition: visibility 0s 0.3s; }
+        .flashcard:not(.flipped) .card-back, .flashcard.flipped .card-front { visibility: hidden; pointer-events: none; }
+        .card-front { padding-top: 16px; padding-bottom: 50px; background: linear-gradient(155deg, #ffffff, #f0f8f6); }
+        .card-back { transform: rotateY(180deg); background: #f6fcfb; }
+        .word-lao-main, .word-lao-sub, .word-zh { max-width: 100%; overflow-wrap: anywhere; text-align: center; }
+        .word-lao-main { margin-bottom: 6px; color: var(--primary); font-size: clamp(1.8rem, 8vw, 2.625rem); font-weight: 800; line-height: 1.3; }
+        .long-prompt .word-lao-main { font-size: clamp(1.25rem, 5vw, 1.6rem); }
+        .word-lao-sub { margin-bottom: 6px; color: var(--primary); font-size: 1.125rem; font-weight: 700; opacity: 0.88; }
+        .word-zh { color: var(--text-main); font-size: clamp(1.35rem, 5.8vw, 1.65rem); font-weight: 700; line-height: 1.3; }
+        rt { font-size: 14px; color: var(--text-sub); }
+        .cat-badge { position: absolute; top: 7px; left: 9px; padding: 3px 8px; border-radius: 999px; background: var(--tint); color: var(--primary); font-size: 12px; font-weight: 600; }
+        .hint-text { position: absolute; bottom: 8px; left: 12px; right: 12px; text-align: center; font-size: 13px; color: var(--text-sub); }
+        .card-front .hint-text {
+            left: 50%; right: auto; transform: translateX(-50%);
+            width: max-content; max-width: calc(100% - 24px); padding: 4px 14px;
+            border-radius: 999px; background: #e3f1ee; color: #23584f;
+            font-size: 16px; font-weight: 700; line-height: 1.35;
+        }
+        #cardLaoSpeak { position: relative; z-index: 1; }
+        #cardSpeak { margin-top: 5px; }
+
+        /* ---------- Flashcards: answer buttons ---------- */
+        .btn { min-height: 52px; border-radius: 18px; padding: 14px; font-size: 15px; }
+        .btn-know { border: 1px solid transparent; background: var(--success); color: white; }
+        .btn-dont { border: 1px solid rgba(255,59,48,0.18); background: var(--card-bg); color: var(--danger); }
+        .btn-normal { background: #e5e5ea; color: var(--text-main); }
+        .btn-block { width: 100%; }
+        .action-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
+        .action-bar .btn { min-height: 44px; padding: 8px; }
+        .study-previous { text-align: center; margin-top: 4px; }
+        .study-previous button { min-height: 44px; padding: 10px; border: none; background: none; color: var(--text-sub); font-size: 14px; }
+
+        /* ---------- My page (statistics, adding words, backups) ---------- */
+        .admin-title { margin-top: 0; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .stat-box { background: var(--card-bg); padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .stat-num { font-size: 28px; font-weight: bold; color: var(--text-main); display: block; margin-bottom: 4px; }
+        .stat-num.is-danger { color: var(--danger); }
+        .stat-label { font-size: 12px; color: var(--text-sub); }
+        .panel-title { margin-top: 0; margin-bottom: 15px; font-size: 16px; }
+        .panel input[type="text"], .panel select {
+            box-sizing: border-box; width: 100%; margin-bottom: 12px; padding: 14px;
+            border: 1px solid #e5e5ea; border-radius: 12px; background: #fafafa; font-size: 15px;
+        }
+        .panel select { outline: none; }
+        .panel input[type="text"]:focus, .panel select:focus { border-color: var(--primary); background: #fff; }
+        .backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .reset-btn { width: 100%; margin-top: 16px; padding: 12px; border: none; background: none; color: var(--danger); font-size: 13px; }
+
+        /* ---------- Small and short screens, reduced motion ---------- */
+        @media (max-width: 420px) {
+            .cat-scroll { gap: 3px; }
+            .cat-btn { padding-inline: 4px; font-size: 12px; }
+        }
+        @media (max-width: 360px) {
+            .container { padding: 14px 10px; }
+            .dict-header { padding: 22px 18px; }
+            .dict-item { gap: 8px; padding: 11px; }
+            .dict-actions { gap: 4px; }
+        }
+        @media (max-width: 320px) {
+            .cat-scroll { gap: 2px; }
+            .cat-btn { padding-inline: 1px; font-size: 11px; }
+        }
+        @media (max-height: 640px) {
+            .container { padding-top: 10px; }
+            .study-header small { display: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .page { animation: none; }
+            .flashcard.animated-flip, .flashcard.animated-flip .card-face, #progressBar { transition: none; }
         }
     </style>
 </head>
 <body>
+<!-- Speaker icon shared by every pronunciation button. -->
+<svg hidden>
+    <symbol id="icon-speaker" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+</svg>
 <button id="updateBanner" class="update-banner" type="button" onclick="applyUpdate()" hidden><span></span></button>
 
 <div id="speechNotice" class="speech-notice" role="alert" hidden></div>
@@ -330,7 +300,7 @@
     <p id="speechStatus" class="speech-status" role="status" aria-live="polite"></p>
     <div id="page-dict" class="page active">
         <header class="dict-header">
-            <h1>小词典 <span class="dict-version">v1.3.5</span></h1>
+            <h1>小词典 <span class="dict-version">v1.3.6</span></h1>
             <p>南欧江水电站学习好帮手</p>
         </header>
         <div class="dict-search" role="search">
@@ -367,21 +337,21 @@
             <button class="cat-btn" onclick="setCat('生活', this)">🏠 生活</button>
             <button class="cat-btn" onclick="setCat('工作', this)">💼 工作</button>
             <button id="randomStudy" class="cat-btn" type="button" aria-pressed="false" onclick="toggleRandomStudy(this)"><span aria-hidden="true">🎲</span> 随机</button>
-            <button class="cat-btn" onclick="setCat('错题', this)" style="color:var(--danger); border-color:#ffcccb;">🚩 错题本</button>
+            <button class="cat-btn cat-wrong" onclick="setCat('错题', this)">🚩 错题本</button>
         </div>
 
         <div class="flashcard-wrapper">
             <div id="mainCard" class="flashcard" onclick="stopChineseSpeech(); setCardFlipped(this, !this.classList.contains('flipped'), true)">
                 <div class="card-front card-face">
                     <div id="cardLaoFront" class="word-lao-main">ສະບາຍດີ</div>
-                    <button id="cardLaoSpeak" class="speak-btn lao-speak-btn" type="button" onclick="event.stopPropagation(); speakLao(currentList[currentIndex]?.lao)" aria-label="朗读当前老挝语词条"><svg class="speak-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>老挝语</span></button>
+                    <button id="cardLaoSpeak" class="speak-btn lao-speak-btn" type="button" onclick="event.stopPropagation(); speakLao(currentList[currentIndex]?.lao)" aria-label="朗读当前老挝语词条"><svg class="speak-icon" aria-hidden="true" focusable="false"><use href="#icon-speaker"/></svg><span>老挝语</span></button>
                     <div class="hint-text">点击卡片翻看答案</div>
                 </div>
                 <div class="card-back card-face" inert>
                     <div id="cardCatTag" class="cat-badge">分类</div>
                     <div id="cardLaoBack" class="word-lao-sub">ສະບາຍດີ</div>
                     <ruby id="cardZhPy" class="word-zh">你好<rt>nǐ hǎo</rt></ruby>
-                    <button id="cardSpeak" class="speak-btn" type="button" onclick="event.stopPropagation(); speakChinese(speechText(currentList[currentIndex]))" aria-label="朗读当前词语的中文意思"><svg class="speak-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>中文</span></button>
+                    <button id="cardSpeak" class="speak-btn" type="button" onclick="event.stopPropagation(); speakChinese(speechText(currentList[currentIndex]))" aria-label="朗读当前词语的中文意思"><svg class="speak-icon" aria-hidden="true" focusable="false"><use href="#icon-speaker"/></svg><span>中文</span></button>
                     <div class="hint-text">如果没记住，请点击“不认识”</div>
                 </div>
             </div>
@@ -393,36 +363,36 @@
         </div>
         
         <div class="study-previous">
-            <button onclick="navStep(-1)" style="background:none; border:none; color:var(--text-sub); font-size:14px; padding:10px;">← 偷看上一个</button>
+            <button type="button" onclick="navStep(-1)">← 偷看上一个</button>
         </div>
     </div>
 
     <div id="page-admin" class="page">
-        <h3 style="margin-top:0;">学习概览</h3>
+        <h3 class="admin-title">学习概览</h3>
         <div class="stats-grid">
-            <div class="stat-box"><span id="stat-total" class="stat-num">0</span><span style="font-size:12px; color:var(--text-sub)">词库总数</span></div>
-            <div class="stat-box"><span id="stat-wrong" class="stat-num" style="color:var(--danger)">0</span><span style="font-size:12px; color:var(--text-sub)">待强化(错题)</span></div>
+            <div class="stat-box"><span id="stat-total" class="stat-num">0</span><span class="stat-label">词库总数</span></div>
+            <div class="stat-box"><span id="stat-wrong" class="stat-num is-danger">0</span><span class="stat-label">待强化(错题)</span></div>
         </div>
 
         <div class="panel">
-            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">📝 手动添加新词</h3>
+            <h3 class="panel-title">📝 手动添加新词</h3>
             <input type="text" id="addLao" placeholder="老挝语 (例如: ສະບາຍດີ)">
             <input type="text" id="addZh" placeholder="中文意思 (拼音自动生成)">
             <select id="addCat">
                 <option value="生活">🏠 生活类</option>
                 <option value="工作">💼 工作类</option>
             </select>
-            <button class="btn btn-know" style="width:100%; box-shadow:none;" onclick="addNewWord()">加入词库</button>
+            <button class="btn btn-know btn-block" onclick="addNewWord()">加入词库</button>
         </div>
 
         <div class="panel">
-            <h3 style="margin-top:0; margin-bottom:15px; font-size:16px;">💾 数据备份与恢复</h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <h3 class="panel-title">💾 数据备份与恢复</h3>
+            <div class="backup-grid">
                 <button class="btn btn-normal" onclick="exportData()">导出备份</button>
                 <button class="btn btn-normal" onclick="document.getElementById('fileIn').click()">导入恢复</button>
-                <input type="file" id="fileIn" style="display:none" accept=".json" onchange="importData(event)">
+                <input type="file" id="fileIn" hidden accept=".json" onchange="importData(event)">
             </div>
-            <button onclick="resetData()" style="width:100%; margin-top:16px; padding:12px; background:none; border:none; color:var(--danger); font-size:13px;">⚠️ 清空个人数据并恢复默认词库</button>
+            <button class="reset-btn" onclick="resetData()">⚠️ 清空个人数据并恢复默认词库</button>
         </div>
     </div>
 </div>
@@ -434,6 +404,9 @@
 </nav>
 
 <script>
+// ==========================================
+// 1. Pronunciation: recorded clips and system speech
+// ==========================================
 // Call speak synchronously from the tap handler to preserve mobile user activation.
 const speechSupported = !!window.speechSynthesis && typeof window.SpeechSynthesisUtterance === 'function';
 let chineseVoice = null;
@@ -743,7 +716,6 @@ function speakChinese(text) {
         showSpeechNotice('这个自定义词语尚未配音；请安装中文系统语音后重试。');
         return;
     }
-    if (!speechSupported || (availableVoices.length && !chineseVoice)) return;
     const utterance = new window.SpeechSynthesisUtterance(text.trim().replace(/\s*\/\s*/g, '，'));
     utterance.lang = 'zh-CN';
     if (chineseVoice) utterance.voice = chineseVoice;
@@ -783,7 +755,7 @@ function initChineseSpeech() {
 }
 
 // ==========================================
-// 1. Public vocabulary from vocabulary.js
+// 2. Public vocabulary from vocabulary.js
 // ==========================================
 const initialDB = window.NAMOU_VOCABULARY;
 
@@ -800,7 +772,7 @@ const pinyinCorrections = {
 if (typeof pinyinPro.customPinyin === 'function') pinyinPro.customPinyin(pinyinCorrections);
 
 // ==========================================
-// 2. State management
+// 3. Personal data and saved state
 // ==========================================
 const correctedLaoSpellings = new Map([
     ['ການຊຳລະງິນ', 'ການຊຳລະເງິນ'],
@@ -885,281 +857,94 @@ function mergeVocabulary(words) {
 
 // Filter obsolete public meanings only when migrating v11 storage or legacy backups.
 const previousMeanings = new Map(Object.entries({
-  "ແປງທາສີ": [
-    "刷子"
-  ],
-  "ການຜ່າຕັດ": [
-    "手术"
-  ],
-  "ການແບ່ງປັນ": [
-    "分享"
-  ],
-  "ຄວາມຊື່ສັດ": [
-    "诚实"
-  ],
-  "ປ່າ": [
-    "森林"
-  ],
-  "ການສະໜັບສະໜູນ": [
-    "支持"
-  ],
-  "ການຄົ້ນຄວ້າ": [
-    "研究"
-  ],
-  "ຄວາມປອດໄພ": [
-    "安全"
-  ],
-  "ການພັດທະນາ": [
-    "发展"
-  ],
-  "ວາງແຜນ": [
-    "计划"
-  ],
-  "ແຜນການ": [
-    "计划"
-  ],
-  "ຄວາມພະຍາຍາມ": [
-    "努力"
-  ],
-  "ການຕັດສິນໃຈ": [
-    "决定"
-  ],
-  "ສະບູຝຸ່ນ": [
-    "洗衣粉"
-  ],
-  "ຄວາມຮັກ": [
-    "爱"
-  ],
-  "ໂຕ": [
-    "只(动物量词)/身体"
-  ],
-  "ກະຊວງ": [
-    "部(政府部门)"
-  ],
-  "ແຄນ": [
-    "笙(老挝乐器)"
-  ],
-  "ນ້ຳອົບ": [
-    "香水(祭祀用)"
-  ],
-  "ຝ້າຍຜູກແຂນ": [
-    "白线(栓线用)"
-  ],
-  "ແທ້ເດ": [
-    "真的哦(语气词)"
-  ],
-  "ບໍ": [
-    "吗(疑问)"
-  ],
-  "ເດີ້": [
-    "语气助词(恳请/叮嘱)"
-  ],
-  "ໂພດ": [
-    "太...了(程度)"
-  ],
-  "ເງິນ": [
-    "银/钱"
-  ],
-  "ແລ່ນ": [
-    "跑步"
-  ],
-  "ຊື່": [
-    "直/名字"
-  ],
-  "ຫົວ": [
-    "头"
-  ],
-  "ເຂົ້າ": [
-    "米/稻谷"
-  ],
-  "ເຂົ້າປຸ້ນ": [
-    "老挝米粉",
-    "凉拌粉"
-  ],
-  "ຜ້າເຊັດຕົວ": [
-    "大浴巾"
-  ],
-  "ໂມງ": [
-    "手表/钟"
-  ],
-  "ລົດຕຸກຕຸກ": [
-    "突突车"
-  ],
-  "ງົວ": [
-    "黄牛"
-  ],
-  "ມືດ": [
-    "暗/黑"
-  ],
-  "ຫຼັງ": [
-    "背"
-  ],
-  "ປົກກະຕິ": [
-    "通常",
-    "正常/通常"
-  ],
-  "ພິເສດ": [
-    "特殊"
-  ],
-  "ອາດຈະ": [
-    "也许/可能"
-  ],
-  "ແນ່ນອນ": [
-    "当然/肯定",
-    "当然"
-  ],
-  "ພໍແລ້ວ": [
-    "够了"
-  ],
-  "ພະຍາຍາມ": [
-    "努力/尝试"
-  ],
-  "ສັນຍາ": [
-    "合同",
-    "承诺/合同"
-  ],
-  "ເສຍ": [
-    "输/丢"
-  ],
-  "ລໍຖ້າ": [
-    "等待"
-  ],
-  "ອອກກຳລັງກາຍ": [
-    "锻炼"
-  ],
-  "ສອກ": [
-    "肘部"
-  ],
-  "ພາສີ": [
-    "关税"
-  ],
-  "ບັນຊີ": [
-    "会计"
-  ],
-  "ລາງວັນ": [
-    "奖项"
-  ],
-  "ການເຈລະຈາ": [
-    "协商/谈判"
-  ],
-  "ການປ່ຽນແປງ": [
-    "变化",
-    "改变"
-  ],
-  "ຄວາມຍຸດຕິທຳ": [
-    "正义",
-    "正义/公正",
-    "公正"
-  ],
-  "ກວດສອບ": [
-    "审计/核实",
-    "检查/核对"
-  ],
-  "ເງິນມັດຈຳ": [
-    "定金/押金"
-  ],
-  "ມາດຕະຖານ": [
-    "标准/规范"
-  ],
-  "ການປະມູນ": [
-    "招标/投标"
-  ],
-  "ຄ່າປັບໃໝ": [
-    "罚款/违约金"
-  ],
-  "ຄວາມໝັ້ນຄົງ": [
-    "安全感/保障",
-    "国家安全"
-  ],
-  "ຄວາມເຊື່ອໝັ້ນ": [
-    "自信"
-  ],
-  "ຄວາມສະຫງົບ": [
-    "治安/安宁"
-  ],
-  "ຄວາມອົດທົນ": [
-    "毅力/耐力"
-  ],
-  "ການອະນຸລັກ": [
-    "保护/保育"
-  ],
-  "ນ້ຳຖ້ວມ": [
-    "水灾/淹水"
-  ],
-  "ຄວາມແຕກຕ່າງ": [
-    "区别/不同"
-  ],
-  "ຄວາມຈິງ": [
-    "真相/事实"
-  ],
-  "ຈັນຍາບັນ": [
-    "职业道德"
-  ],
-  "ຢາຂ້າເຊື້ອ": [
-    "消毒药/抗生素",
-    "抗生素"
-  ],
-  "ກະລຸນາ": [
-    "请(委婉)"
-  ],
-  "ປະເທດລາວ": [
-    "老挝国家"
-  ],
-  "ອີກບໍ່ດົນ": [
-    "稍后"
-  ],
-  "ໂຄມໄຟ": [
-    "台灯"
-  ],
-  "ຕີບານ": [
-    "排球"
-  ],
-  "ມາຮອດດຽວນີ້": [
-    "马上到"
-  ],
-  "ໄຟຟ້າລັດວົງຈອນ": [
-    "短路"
-  ],
-  "ການວັດແທກ": [
-    "测量/仪表"
-  ],
-  "ບົດບັນທຶກ": [
-    "会议纪要/记录"
-  ],
-  "ປັບປຸງ": [
-    "改进/装修"
-  ],
-  "ຍອມຮັບ": [
-    "接受"
-  ],
-  "ສະເໝີ": [
-    "平局"
-  ],
-  "ທັນທີ": [
-    "立刻"
-  ],
-  "ຢາສະຜົມ": [
-    "洗发水"
-  ],
-  "ລະດັບນ້ຳ": [
-    "水平仪",
-    "水平尺"
-  ],
-  "ແກງໜໍ່ໄມ້": [
-    "笋汤"
-  ],
-  "ບໍ່ເປັນຫຍັງ": [
-    "别客气/没事"
-  ],
-  "ໃຈກວ້າງ": [
-    "大方"
-  ],
-  "ຊື່ສັດ": [
-    "忠诚"
-  ],
-  "ເຫຼັກເສັ້ນ": [
-    "钢筋"
-  ]
+    "ແປງທາສີ": ["刷子"],
+    "ການຜ່າຕັດ": ["手术"],
+    "ການແບ່ງປັນ": ["分享"],
+    "ຄວາມຊື່ສັດ": ["诚实"],
+    "ປ່າ": ["森林"],
+    "ການສະໜັບສະໜູນ": ["支持"],
+    "ການຄົ້ນຄວ້າ": ["研究"],
+    "ຄວາມປອດໄພ": ["安全"],
+    "ການພັດທະນາ": ["发展"],
+    "ວາງແຜນ": ["计划"],
+    "ແຜນການ": ["计划"],
+    "ຄວາມພະຍາຍາມ": ["努力"],
+    "ການຕັດສິນໃຈ": ["决定"],
+    "ສະບູຝຸ່ນ": ["洗衣粉"],
+    "ຄວາມຮັກ": ["爱"],
+    "ໂຕ": ["只(动物量词)/身体"],
+    "ກະຊວງ": ["部(政府部门)"],
+    "ແຄນ": ["笙(老挝乐器)"],
+    "ນ້ຳອົບ": ["香水(祭祀用)"],
+    "ຝ້າຍຜູກແຂນ": ["白线(栓线用)"],
+    "ແທ້ເດ": ["真的哦(语气词)"],
+    "ບໍ": ["吗(疑问)"],
+    "ເດີ້": ["语气助词(恳请/叮嘱)"],
+    "ໂພດ": ["太...了(程度)"],
+    "ເງິນ": ["银/钱"],
+    "ແລ່ນ": ["跑步"],
+    "ຊື່": ["直/名字"],
+    "ຫົວ": ["头"],
+    "ເຂົ້າ": ["米/稻谷"],
+    "ເຂົ້າປຸ້ນ": ["老挝米粉", "凉拌粉"],
+    "ຜ້າເຊັດຕົວ": ["大浴巾"],
+    "ໂມງ": ["手表/钟"],
+    "ລົດຕຸກຕຸກ": ["突突车"],
+    "ງົວ": ["黄牛"],
+    "ມືດ": ["暗/黑"],
+    "ຫຼັງ": ["背"],
+    "ປົກກະຕິ": ["通常", "正常/通常"],
+    "ພິເສດ": ["特殊"],
+    "ອາດຈະ": ["也许/可能"],
+    "ແນ່ນອນ": ["当然/肯定", "当然"],
+    "ພໍແລ້ວ": ["够了"],
+    "ພະຍາຍາມ": ["努力/尝试"],
+    "ສັນຍາ": ["合同", "承诺/合同"],
+    "ເສຍ": ["输/丢"],
+    "ລໍຖ້າ": ["等待"],
+    "ອອກກຳລັງກາຍ": ["锻炼"],
+    "ສອກ": ["肘部"],
+    "ພາສີ": ["关税"],
+    "ບັນຊີ": ["会计"],
+    "ລາງວັນ": ["奖项"],
+    "ການເຈລະຈາ": ["协商/谈判"],
+    "ການປ່ຽນແປງ": ["变化", "改变"],
+    "ຄວາມຍຸດຕິທຳ": ["正义", "正义/公正", "公正"],
+    "ກວດສອບ": ["审计/核实", "检查/核对"],
+    "ເງິນມັດຈຳ": ["定金/押金"],
+    "ມາດຕະຖານ": ["标准/规范"],
+    "ການປະມູນ": ["招标/投标"],
+    "ຄ່າປັບໃໝ": ["罚款/违约金"],
+    "ຄວາມໝັ້ນຄົງ": ["安全感/保障", "国家安全"],
+    "ຄວາມເຊື່ອໝັ້ນ": ["自信"],
+    "ຄວາມສະຫງົບ": ["治安/安宁"],
+    "ຄວາມອົດທົນ": ["毅力/耐力"],
+    "ການອະນຸລັກ": ["保护/保育"],
+    "ນ້ຳຖ້ວມ": ["水灾/淹水"],
+    "ຄວາມແຕກຕ່າງ": ["区别/不同"],
+    "ຄວາມຈິງ": ["真相/事实"],
+    "ຈັນຍາບັນ": ["职业道德"],
+    "ຢາຂ້າເຊື້ອ": ["消毒药/抗生素", "抗生素"],
+    "ກະລຸນາ": ["请(委婉)"],
+    "ປະເທດລາວ": ["老挝国家"],
+    "ອີກບໍ່ດົນ": ["稍后"],
+    "ໂຄມໄຟ": ["台灯"],
+    "ຕີບານ": ["排球"],
+    "ມາຮອດດຽວນີ້": ["马上到"],
+    "ໄຟຟ້າລັດວົງຈອນ": ["短路"],
+    "ການວັດແທກ": ["测量/仪表"],
+    "ບົດບັນທຶກ": ["会议纪要/记录"],
+    "ປັບປຸງ": ["改进/装修"],
+    "ຍອມຮັບ": ["接受"],
+    "ສະເໝີ": ["平局"],
+    "ທັນທີ": ["立刻"],
+    "ຢາສະຜົມ": ["洗发水"],
+    "ລະດັບນ້ຳ": ["水平仪", "水平尺"],
+    "ແກງໜໍ່ໄມ້": ["笋汤"],
+    "ບໍ່ເປັນຫຍັງ": ["别客气/没事"],
+    "ໃຈກວ້າງ": ["大方"],
+    "ຊື່ສັດ": ["忠诚"],
+    "ເຫຼັກເສັ້ນ": ["钢筋"]
 }));
 
 function extractCustomEntries(words, legacy = false) {
@@ -1250,7 +1035,7 @@ let randomStudy = false;
 let currentIndex = 0;
 
 // ==========================================
-// 3. Pages and navigation
+// 4. Pages and navigation
 // ==========================================
 // Set this flag to true to re-enable the administration page.
 const ADMIN_PAGE_ENABLED = false;
@@ -1263,15 +1048,15 @@ function navTo(pageId, tabElement) {
     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
     
     document.getElementById('page-' + pageId).classList.add('active');
-    if(tabElement) tabElement.classList.add('active');
+    if (tabElement) tabElement.classList.add('active');
 
-    if(pageId === 'study') refreshStudy();
-    if(pageId === 'admin') updateAdminStats();
-    if(pageId === 'dict') renderDict();
+    if (pageId === 'study') refreshStudy();
+    if (pageId === 'admin') updateAdminStats();
+    if (pageId === 'dict') renderDict();
 }
 
 // ==========================================
-// 4. Dictionary
+// 5. Dictionary
 // ==========================================
 // Accept pinyin without tones or spaces. Preserve Lao tone and vowel marks.
 function searchDictionary(query) {
@@ -1390,7 +1175,7 @@ function matchedRange(text, query) {
 }
 
 // Simple line icon used on every pronunciation button.
-const SPEAKER_ICON = '<svg class="speak-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const SPEAKER_ICON = '<svg class="speak-icon" aria-hidden="true" focusable="false"><use href="#icon-speaker"/></svg>';
 
 function renderDict(start = 0) {
     const query = document.getElementById('searchInput').value.trim();
@@ -1412,7 +1197,7 @@ function renderDict(start = 0) {
     
     const dictContent = document.getElementById('dictContent');
     const fragment = document.createElement('template');
-    fragment.innerHTML = html || '<div style="text-align:center; padding:30px; color:var(--text-sub);">未找到相关词汇</div>';
+    fragment.innerHTML = html || '<div class="dict-empty">未找到相关词汇</div>';
     // Use entry data directly in the event handler so quotes and other characters remain literal.
     fragment.content.querySelectorAll('.zh-speak-btn').forEach((button, index) => {
         const { word, matchedIndices } = result[index];
@@ -1470,7 +1255,7 @@ function renderDict(start = 0) {
 }
 
 // ==========================================
-// 5. Flashcards and study progress
+// 6. Flashcards and study progress
 // ==========================================
 function setCat(cat, btnElement) {
     const categoryChanged = currentCat !== cat;
@@ -1550,11 +1335,11 @@ function updateCardUI() {
     
     // Handle an empty list.
     if (currentList.length === 0) {
-        document.getElementById('cardLaoFront').innerText = "太棒了";
-        document.getElementById('cardLaoBack').innerText = "空空如也";
+        document.getElementById('cardLaoFront').textContent = "太棒了";
+        document.getElementById('cardLaoBack').textContent = "空空如也";
         renderCardMeaning("该分类下没有词汇", "请添加或切换分类");
-        document.getElementById('cardCatTag').style.display = 'none';
-        document.getElementById('progressText').innerText = randomStudy ? '随机 0/0' : '0/0';
+        document.getElementById('cardCatTag').hidden = true;
+        document.getElementById('progressText').textContent = randomStudy ? '随机 0/0' : '0/0';
         document.getElementById('progressBar').style.width = "0%";
         updateProgressMode();
         return;
@@ -1564,18 +1349,18 @@ function updateCardUI() {
     const word = currentList[currentIndex];
     
     // Front face.
-    document.getElementById('cardLaoFront').innerText = word.lao;
+    document.getElementById('cardLaoFront').textContent = word.lao;
     
     // Back face with the headword and translation.
-    document.getElementById('cardLaoBack').innerText = word.lao;
+    document.getElementById('cardLaoBack').textContent = word.lao;
     renderCardMeaning(speechText(word), word.py.split('；').join(' / '));
-    document.getElementById('cardCatTag').innerText = word.cat;
-    document.getElementById('cardCatTag').style.display = 'block';
+    document.getElementById('cardCatTag').textContent = word.cat;
+    document.getElementById('cardCatTag').hidden = false;
 
     // Progress bar.
     const currentNum = currentIndex + 1;
     const totalNum = currentList.length;
-    document.getElementById('progressText').innerText = `${randomStudy ? '随机 ' : ''}${currentNum}/${totalNum}`;
+    document.getElementById('progressText').textContent = `${randomStudy ? '随机 ' : ''}${currentNum}/${totalNum}`;
     updateProgressMode();
     document.getElementById('progressBar').style.width = `${(currentNum / totalNum) * 100}%`;
 
@@ -1629,11 +1414,11 @@ function navStep(step) {
 }
 
 // ==========================================
-// 6. Administration, backups, and restore
+// 7. My page: statistics, adding words, backups
 // ==========================================
 function updateAdminStats() {
-    document.getElementById('stat-total').innerText = db.length;
-    document.getElementById('stat-wrong').innerText = wrongs.length;
+    document.getElementById('stat-total').textContent = db.length;
+    document.getElementById('stat-wrong').textContent = wrongs.length;
 }
 
 function addNewWord() {
@@ -1666,7 +1451,7 @@ function exportData() {
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = `LaoLearn_Backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `小词典备份_${new Date().toISOString().slice(0,10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1700,7 +1485,7 @@ function importData(event) {
                     location.reload();
                 }
             } else {
-                alert("文件格式不正确，请选择LaoLearn导出的JSON文件。");
+                alert("文件格式不正确，请选择小词典导出的备份文件。");
             }
         } catch (err) {
             alert("读取失败：文件已损坏或格式错误。");
@@ -1711,7 +1496,7 @@ function importData(event) {
 }
 
 function resetData() {
-    if(confirm("⚠️ 危险操作！这会清空自己添加的词和译义、错题本及背诵进度，并恢复默认词库。确定要继续吗？")) {
+    if (confirm("⚠️ 危险操作！这会清空自己添加的词和译义、错题本及背诵进度，并恢复默认词库。确定要继续吗？")) {
         localStorage.removeItem('lao_db_v11');
         localStorage.removeItem('lao_wrong_v11');
         localStorage.removeItem(customKey);
@@ -1722,15 +1507,8 @@ function resetData() {
 }
 
 // ==========================================
-// Initialize the page
+// 8. Update banner
 // ==========================================
-window.onload = () => {
-    initChineseSpeech();
-    renderDict();
-    updateAdminStats();
-    checkForUpdate();
-};
-
 // Home-screen web apps have no reload button and can reopen a cached page. Check the published
 // version when the page opens or comes back to the foreground, and offer a one-tap update.
 const CURRENT_VERSION = document.querySelector('.dict-version').textContent.trim();
@@ -1762,6 +1540,16 @@ function applyUpdate() {
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') checkForUpdate();
 });
+
+// ==========================================
+// Initialize the page
+// ==========================================
+window.onload = () => {
+    initChineseSpeech();
+    renderDict();
+    updateAdminStats();
+    checkForUpdate();
+};
 </script>
 </body>
 </html>
