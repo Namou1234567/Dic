@@ -31,7 +31,7 @@ Study progress and missed words are saved only in the user's own browser.
 | Mandarin | Microsoft `zh-CN-XiaoxiaoNeural`, rate -10% | `audio/mandarin-*.mp3`, `audio/manifest.js` |
 | Lao | Microsoft `lo-LA-ChanthavongNeural` | `audio/lao/chanthavong-*.mp3`, `audio/lao/manifest.js` |
 
-Recordings are made with [edge-tts](https://github.com/rany2/edge-tts) and packed up to 50 clips per MP3 file. The manifests store each clip's file and time range. `tools/generate_audio.py` records only the entries without a clip and puts them in new files. If the voice in the script changes, it re-records that whole language. A Chinese meaning that a user adds personally is read by the browser's own voice.
+The Mandarin recording leaves out notes in brackets, such as （名词）. The Lao recording leaves out English in brackets, such as (Active Power), but reads English outside brackets, such as ATM. Recordings are made with [edge-tts](https://github.com/rany2/edge-tts) and packed up to 50 clips per MP3 file. The manifests store each clip's file and time range. `tools/generate_audio.py` records only the entries without a clip and puts them in new files. If the voice in the script changes, it re-records that whole language. A Chinese meaning that a user adds personally is read by the browser's own voice.
 
 ## Local checks
 
