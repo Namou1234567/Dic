@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.4 · 2026-11-28
+
+- Lao recordings spell English abbreviations with Lao letter names, so ຕູ້ ATM is read as ຕູ້ ເອ ທີ ເອັມ instead of mixing in English. Six recordings are remade: ATM, VIP, SF6, GIS and two with UPS. The screen still shows the English letters.
+
 ## 1.3.3 · 2026-11-28
 
 - Lao recordings no longer read English in brackets, which the Lao voice pronounced poorly, for example ກຳລັງໄຟຟ້າແທ້ (Active Power). The English is still shown. English outside brackets, such as ຕູ້ ATM, is still read. Ten recordings are remade.
