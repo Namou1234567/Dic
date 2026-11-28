@@ -91,12 +91,30 @@ def exported_words():
     return json.loads(output)
 
 
+# How Lao speakers name English letters and digits, matching entries such as ພີແອລຊີ (PLC).
+LAO_LETTER_NAMES = {
+    'A': 'ເອ', 'B': 'ບີ', 'C': 'ຊີ', 'D': 'ດີ', 'E': 'ອີ', 'F': 'ເອັຟ', 'G': 'ຈີ',
+    'H': 'ເອັຊ', 'I': 'ໄອ', 'J': 'ເຈ', 'K': 'ເຄ', 'L': 'ແອລ', 'M': 'ເອັມ', 'N': 'ເອັນ',
+    'O': 'ໂອ', 'P': 'ພີ', 'Q': 'ຄິວ', 'R': 'ອາ', 'S': 'ແອສ', 'T': 'ທີ', 'U': 'ຢູ',
+    'V': 'ວີ', 'W': 'ດັບເບິນຢູ', 'X': 'ເອັກ', 'Y': 'ວາຍ', 'Z': 'ແຊັດ',
+    '0': 'ສູນ', '1': 'ໜຶ່ງ', '2': 'ສອງ', '3': 'ສາມ', '4': 'ສີ່', '5': 'ຫ້າ',
+    '6': 'ຫົກ', '7': 'ເຈັດ', '8': 'ແປດ', '9': 'ເກົ້າ',
+}
+
+
+def spell_lao(match):
+    return ' ' + ' '.join(LAO_LETTER_NAMES[char] for char in match.group()) + ' '
+
+
 def speech_text(lang, text):
     """Mandarin: drop parenthetical notes and turn slashes into pauses.
-    Lao: drop bracketed English, which the Lao voice reads poorly. English
-    outside brackets, such as ATM or SF6, is still read."""
+    Lao: drop bracketed English, which the Lao voice reads poorly, and spell
+    abbreviations outside brackets with Lao letter names, so ATM is read as
+    ເອ ທີ ເອັມ."""
     if lang != 'zh':
-        return re.sub(r'\s*\([^()]*[A-Za-z][^()]*\)', '', text).strip() or text
+        text = re.sub(r'\s*\([^()]*[A-Za-z][^()]*\)', '', text)
+        text = re.sub(r'[A-Z][A-Z0-9]*', spell_lao, text)
+        return re.sub(r'\s+', ' ', text).strip() or text
     text = re.sub(r'[（(][^）)]*[）)]', '', text)
     return re.sub(r'\s*/\s*', '，', text).strip(' ，') or text
 
