@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.6 · 2026-11-28
+
+- Tidy the page code without changing how it looks or works. The styles, which had an older theme with a newer one written over it, are merged into one set grouped by page area, and styles written directly on buttons and headings move into the style sheet. The speaker icon is defined once, the script is split into numbered sections, and a repeated check is removed.
+- Backups are now saved as 小词典备份_<date>.json instead of LaoLearn_Backup_<date>.json. Older backup files can still be restored.
+
 ## 1.3.5 · 2026-11-28
 
 - Repack the recordings in vocabulary order, 50 clips per file, and drop audio that no entry uses. The recordings shrink from 95 to 82 files and about 2 MB less, and flashcards in order rarely need a new file. Each phone downloads the recordings once more.
