@@ -3,6 +3,7 @@
 ## 1.3.2 · 2026-11-28
 
 - Use one bracket style throughout: full-width （…） in Chinese meanings and a space before half-width (…) in Lao, for example 吗（疑问） and ກະບ່າຍ (ກະສວຍ). Wording is unchanged. Missed words saved under the old Lao spelling move to the updated entry.
+- Apply a Lao colleague's review of words that shared a Chinese meaning. Keep one spelling each of lock (ແມ່ກະແຈ), tongue (ລີ້ນ) and policy (ນະໂຍບາຍ), and drop the extra wordings for safety helmet, justice, generator and transformer. Noun forms with ການ or ຄວາມ are labelled （名词）, for example 安全（名词） for ຄວາມປອດໄພ. Other meanings are made more precise: 计划（名词） and 做计划/规划, 肥皂粉, 树林/森林 and 油漆刷. Missed words under a removed wording move to the kept one. The vocabulary has 2,011 Lao headwords.
 
 ## 1.3.1 · 2026-11-28
 

@@ -47,8 +47,8 @@ assert.deepEqual(JSON.parse(saved.get('lao_wrong_v12')), ['ລະດັບນ້
 assert(!saved.has('lao_db_v11') && !saved.has('lao_wrong_v11'));
 // Missed words under corrected or replaced headwords move to the current entry.
 assert.deepEqual(JSON.parse(vm.runInContext(
-    "JSON.stringify(mergeWrongEntries(['ສົງ', 'ລຸກ', 'ກາລຸນາ', 'ບຸນພະເວດ', 'ກະບ່າຍ（ກະສວຍ）'], db).map(word => word.lao))", scope)),
-    ['ໂສ້ງ', 'ຕື່ນນອນ', 'ກະລຸນາ', 'ກະບ່າຍ (ກະສວຍ)']);
+    "JSON.stringify(mergeWrongEntries(['ສົງ', 'ລຸກ', 'ກາລຸນາ', 'ບຸນພະເວດ', 'ກະບ່າຍ（ກະສວຍ）', 'ລິ້ນ'], db).map(word => word.lao))", scope)),
+    ['ໂສ້ງ', 'ຕື່ນນອນ', 'ກະລຸນາ', 'ກະບ່າຍ (ກະສວຍ)', 'ລີ້ນ']);
 assert.deepEqual(JSON.parse(vm.runInContext(
     "JSON.stringify(extractCustomEntries([{ lao: 'ລຸກ', zh: '起床', cat: '生活' }, " +
     "{ lao: 'ເຂົ້າປຸ້ນ', zh: '凉拌粉', cat: '生活' }, { lao: 'ກາລຸນາ', zh: '请(委婉)', cat: '生活' }], true))", scope)),
