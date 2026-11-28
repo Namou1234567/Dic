@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.3 · 2026-11-28
+
+- Lao recordings no longer read English in brackets, which the Lao voice pronounced poorly, for example ກຳລັງໄຟຟ້າແທ້ (Active Power). The English is still shown. English outside brackets, such as ຕູ້ ATM, is still read. Ten recordings are remade.
+
 ## 1.3.2 · 2026-11-28
 
 - Use one bracket style throughout: full-width （…） in Chinese meanings and a space before half-width (…) in Lao, for example 吗（疑问） and ກະບ່າຍ (ກະສວຍ). Wording is unchanged. Missed words saved under the old Lao spelling move to the updated entry.

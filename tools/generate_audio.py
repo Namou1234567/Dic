@@ -92,9 +92,11 @@ def exported_words():
 
 
 def speech_text(lang, text):
-    """Mandarin: drop parenthetical notes and turn slashes into pauses."""
+    """Mandarin: drop parenthetical notes and turn slashes into pauses.
+    Lao: drop bracketed English, which the Lao voice reads poorly. English
+    outside brackets, such as ATM or SF6, is still read."""
     if lang != 'zh':
-        return text
+        return re.sub(r'\s*\([^()]*[A-Za-z][^()]*\)', '', text).strip() or text
     text = re.sub(r'[（(][^）)]*[）)]', '', text)
     return re.sub(r'\s*/\s*', '，', text).strip(' ，') or text
 
